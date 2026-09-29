@@ -22,19 +22,24 @@ Trình duyệt ──► React (web/dist) ─┘
 
 | Thành phần | Phiên bản | Ghi chú |
 |---|---|---|
-| Python | **3.11 hoặc 3.12** | `faiss-cpu` **không có** wheel Windows cho Python 3.13/3.14 — cài Python 3.12 nếu muốn chạy local |
+| Python | **3.11 – 3.14** | Đã thử trên Windows/Python 3.14 với torch 2.14 CPU + faiss-cpu 1.15.1 |
 | Node | **≥ 22.12** | Vite 8 yêu cầu Node ≥ 20.19 hoặc ≥ 22.12 |
-| GPU | không bắt buộc | CPU chạy được cả 4 mô hình; notebook tự giảm epoch và dùng LLM 0.5B |
+| GPU | không bắt buộc | CPU chạy được cả 4 mô hình; tự giảm còn 1 epoch / 800 ảnh train và LLM 0.5B |
 
 ## 2. Chạy trên máy (Windows / Linux / macOS)
 
 ```bash
-py -3.12 -m venv .venv
+py -3 -m venv .venv
 .venv\Scripts\activate                 # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
-python scripts/build_artifacts.py all  # sinh artifacts (lần đầu ~10–40 phút tuỳ máy)
+python scripts/build_artifacts.py all  # sinh artifacts (~15 phút trên GPU, 1–2 giờ trên CPU)
 python scripts/serve.py api
 ```
+
+Trên máy **không có GPU NVIDIA**, `pip install torch` từ PyPI đã là bản CPU nên không cần làm gì thêm.
+Chạy trên CPU vẫn ra đủ 4 bộ artifacts, nhưng classifier chỉ học 1 epoch trên 800 ảnh
+(test accuracy thực đo ~0.68, so với ~0.9x khi chạy đủ 5 epoch trên GPU) — **dùng CPU để thử luồng,
+không dùng để lấy số nộp bài.**
 
 Mở `http://localhost:8000/docs` để thử API, hoặc chạy giao diện:
 
@@ -177,7 +182,7 @@ docker run -p 7860:7860 ai-web-apps      # mở http://localhost:7860
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| `pip install faiss-cpu` lỗi trên Windows | Dùng Python 3.11/3.12 (chưa có wheel cho 3.13/3.14) |
+| `git status` hiện hàng nghìn file lạ | Bạn chạy notebook gốc **trong thư mục repo** — nó tạo dự án riêng ở `ai_web_apps/`. Xoá thư mục đó, và chạy notebook trên Colab hoặc dùng `scripts/build_artifacts.py` |
 | `CUDA out of memory` khi chạy API | Đặt `ENABLED_MODELS` ít hơn, hoặc thêm `--batch-size 16` khi train |
 | `/api/health` báo mô hình `false` | Thiếu file trong `artifacts/` — xem `logs/api.log`, chạy lại stage tương ứng |
 | Tải model Hugging Face chậm / lỗi 429 | `huggingface_hub.login()` bằng token miễn phí |

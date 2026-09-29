@@ -1,3 +1,7 @@
+# Bản sao do notebook gốc tự sinh khi chạy TRONG thư mục repo (Path.cwd()/ai_web_apps).
+# Notebook gốc không phải là repo này — chạy nó trên Colab, hoặc dùng scripts/build_artifacts.py.
+/ai_web_apps/
+
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -5,18 +9,18 @@ __pycache__/
 venv/
 dist/
 
-# Dữ liệu thô tải lại được bằng scripts/build_artifacts.py
-data/flowers/
-data/coco128/
-data/flower_photos.tgz
-data/coco128.zip
+# Dữ liệu thô tải lại được bằng scripts/build_artifacts.py — chặn ở mọi độ sâu,
+# vì notebook gốc đặt chúng trong ai_web_apps/data/ chứ không phải data/ ở gốc.
+**/data/flowers/
+**/data/coco128/
+**/data/*.tgz
+**/data/*.zip
 runs/
 
-# Trọng số YOLO tải tự động
+# Tải tự động khi chạy
+node_modules/
 cloudflared
 cloudflared.exe
 logs/
-web/node_modules/
-web/dist/
 
 .env
