@@ -152,6 +152,7 @@ Lưu ý khi lên production: gói miễn phí không có GPU nên đặt `ENABLE
 | `CLIP_MODEL` | `openai/clip-vit-base-patch32` | Tìm kiếm ảnh |
 | `YOLO_WEIGHTS` | `artifacts/detector/yolo11n.pt` | Trọng số phát hiện đối tượng |
 | `MAX_UPLOAD_MB` | `8` | Giới hạn ảnh tải lên |
+| `RAG_MIN_SCORE` | `0.30` | Điểm cosine tối thiểu để coi là tài liệu liên quan; dưới ngưỡng thì chatbot từ chối thay vì gọi LLM |
 | `CORS_ORIGINS` | `http://localhost:5173,http://localhost:8501` | Origin được gọi API |
 | `API_URL` | `http://localhost:8000` | (Streamlit) địa chỉ backend |
 

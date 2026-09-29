@@ -30,6 +30,11 @@ ENABLED_MODELS = {
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "8"))
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://localhost:8501").split(",")
 
+# Ngưỡng điểm cosine tối thiểu để coi là "tài liệu có liên quan" (chatbot RAG).
+# Số đo thực tế: câu hỏi trong phạm vi đạt 0.55–0.67, câu ngoài phạm vi chỉ 0.10–0.12.
+# Dưới ngưỡng này thì không gọi LLM — tránh để model trả lời bằng kiến thức ngoài tài liệu.
+RAG_MIN_SCORE = float(os.environ.get("RAG_MIN_SCORE", "0.30"))
+
 
 def resolve_path(path: str) -> Path:
     """Dữ liệu lưu đường dẫn tương đối so với ROOT để mang sang máy khác (Docker, HF Spaces)."""

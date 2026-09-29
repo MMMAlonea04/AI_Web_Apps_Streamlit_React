@@ -10,7 +10,9 @@ import torch
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
-from config import DATA_DIR, DEVICE, EMBED_MODEL, LLM_MODEL
+from config import DATA_DIR, DEVICE, EMBED_MODEL, LLM_MODEL, RAG_MIN_SCORE
+
+NO_INFO_ANSWER = "Mình chưa có thông tin này, bạn vui lòng liên hệ hotline 1900 0000."
 
 SYSTEM_PROMPT = (
     "Bạn là trợ lý chăm sóc khách hàng của cửa hàng trực tuyến ShopLite. "
@@ -76,6 +78,8 @@ class RAGChatbot:
     def stream(self, question: str, history: list[dict] | None = None, k: int = 3,
                max_new_tokens: int = 384) -> tuple[list[dict], Iterator[str]]:
         contexts = self.retriever.search(question, k)
+        if not contexts or contexts[0]["score"] < RAG_MIN_SCORE:
+            return [], iter([NO_INFO_ANSWER])   # không có tài liệu liên quan -> không gọi LLM
         prompt = self.tokenizer.apply_chat_template(
             self._messages(question, contexts, history), tokenize=False, add_generation_prompt=True
         )
