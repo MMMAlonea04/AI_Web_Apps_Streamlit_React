@@ -25,34 +25,34 @@ Danh sách đầy đủ và ý nghĩa từng ảnh: [docs/screenshots/](docs/scr
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/01-tong-quan-streamlit.png" alt="Tổng quan"><br>
-<sub><b>Khởi động</b> — sidebar báo <code>Backend: 🟢 cuda</code> và cả 4 mô hình đã nạp ✅</sub></td>
-<td width="50%"><img src="docs/screenshots/02-phan-loai.png" alt="Phân loại ảnh"><br>
-<sub><b>1. Phân loại ảnh</b> — ảnh hướng dương → <code>sunflowers 88.6%</code>, kèm độ trễ</sub></td>
+<td width="50%"><a href="docs/screenshots/01-streamlit-tong-quan.jpg"><img src="docs/screenshots/01-streamlit-tong-quan.jpg" alt="Tổng quan Streamlit"></a><br>
+<sub><b>Streamlit — khởi động</b>: sidebar báo <code>Backend: 🟢 cuda</code>, cả 4 mô hình đã nạp ✅, và <b>chức năng 1 (phân loại ảnh)</b> trả về <code>daisy 91.2%</code> trong 11.6 ms</sub></td>
+<td width="50%"><a href="docs/screenshots/02-streamlit-phat-hien.jpg"><img src="docs/screenshots/02-streamlit-phat-hien.jpg" alt="Streamlit - phát hiện đối tượng"></a><br>
+<sub><b>Chức năng 2 — phát hiện đối tượng</b> (Streamlit): YOLO11n vẽ hộp lên ảnh, trả về <code>{person: 1, potted plant: 1}</code> kèm bảng toạ độ</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/03-phat-hien.png" alt="Phát hiện đối tượng"><br>
-<sub><b>2. Phát hiện đối tượng</b> — YOLO11n vẽ hộp lên ảnh + bảng toạ độ <code>{bus: 1, person: 4}</code></sub></td>
-<td width="50%"><img src="docs/screenshots/04-tim-anh.png" alt="Tìm kiếm ảnh"><br>
-<sub><b>3. Tìm kiếm ảnh</b> — gõ câu mô tả, trả về lưới ảnh xếp theo điểm tương đồng</sub></td>
+<td width="50%"><a href="docs/screenshots/03-streamlit-tim-anh.jpg"><img src="docs/screenshots/03-streamlit-tim-anh.jpg" alt="Streamlit - tìm kiếm ảnh"></a><br>
+<sub><b>Chức năng 3 — tìm kiếm ảnh</b> (Streamlit): gõ câu mô tả <i>“yellow sunflowers in a field”</i>, trả về ảnh xếp theo điểm tương đồng</sub></td>
+<td width="50%"><a href="docs/screenshots/04-streamlit-chatbot.jpg"><img src="docs/screenshots/04-streamlit-chatbot.jpg" alt="Streamlit - chatbot"></a><br>
+<sub><b>Chức năng 4 — chatbot RAG</b> (Streamlit): trả lời theo tài liệu và <b>mở phần “Nguồn đã dùng”</b></sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/05-chatbot-nguon.png" alt="Chatbot RAG"><br>
-<sub><b>4. Chatbot RAG</b> — trả lời theo tài liệu và <b>mở phần "Nguồn đã dùng"</b></sub></td>
-<td width="50%"><img src="docs/screenshots/06-ca-mo-hinh-sai.png" alt="Ca mô hình sai"><br>
-<sub><b>Ca mô hình sai</b> — <code>bus.jpg</code> bị đoán là <code>tulips</code>, hệ thống <b>báo "không chắc chắn"</b> thay vì khẳng định sai</sub></td>
+<td width="50%"><a href="docs/screenshots/05-react-phan-loai.jpg"><img src="docs/screenshots/05-react-phan-loai.jpg" alt="React - phân loại ảnh"></a><br>
+<sub><b>Giao diện thứ hai (React)</b> — chức năng 1: <code>roses 75.0% · tulips 19.6% · sunflowers 2.1%</code>, 8 ms</sub></td>
+<td width="50%"><a href="docs/screenshots/06-react-phat-hien.jpg"><img src="docs/screenshots/06-react-phat-hien.jpg" alt="React - phát hiện đối tượng"></a><br>
+<sub><b>React</b> — chức năng 2: <code>fork 96.1% · cake 93.0% · dining table 31.4%</code>, bảng 3 cột Lớp / Độ tin cậy / Hộp</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/07-react-phat-hien.png" alt="React - phát hiện"><br>
-<sub><b>Giao diện thứ hai (React)</b> — cùng backend, bố cục khác, bảng 3 cột Lớp / Độ tin cậy / Hộp</sub></td>
-<td width="50%"><img src="docs/screenshots/08-react-chatbot.png" alt="React - chatbot"><br>
-<sub><b>React</b> — chatbot chạy streaming, có nút <b>Dừng</b>, mở được <code>Nguồn (3)</code></sub></td>
+<td width="50%"><a href="docs/screenshots/07-react-tim-anh.jpg"><img src="docs/screenshots/07-react-tim-anh.jpg" alt="React - tìm kiếm ảnh"></a><br>
+<sub><b>React</b> — chức năng 3: lưới kết quả kèm nhãn và điểm, tìm được cả bằng câu mô tả lẫn ảnh mẫu</sub></td>
+<td width="50%"><a href="docs/screenshots/08-react-chatbot.jpg"><img src="docs/screenshots/08-react-chatbot.jpg" alt="React - chatbot"></a><br>
+<sub><b>React</b> — chức năng 4 trên điện thoại: trả lời đúng “7 ngày” và có <code>Nguồn (3)</code> để tự kiểm</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/09-swagger-docs.png" alt="Swagger"><br>
+<td width="50%"><a href="docs/screenshots/09-tren-dien-thoai.jpg"><img src="docs/screenshots/09-tren-dien-thoai.jpg" alt="Trên điện thoại"></a><br>
+<sub><b>Chạy trên điện thoại</b> — cùng một link công khai, không cần cài gì</sub></td>
+<td width="50%"><a href="docs/screenshots/10-swagger-docs.jpg"><img src="docs/screenshots/10-swagger-docs.jpg" alt="Swagger /docs"></a><br>
 <sub><b>Backend</b> — 8 endpoint của FastAPI, tài liệu tự sinh tại <code>/docs</code></sub></td>
-<td width="50%"><img src="docs/screenshots/10-dien-thoai.png" alt="Trên điện thoại"><br>
-<sub><b>Trên điện thoại</b> — cùng link công khai, không cần cài gì</sub></td>
 </tr>
 </table>
 
