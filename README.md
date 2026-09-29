@@ -178,7 +178,27 @@ docker build -t ai-web-apps .
 docker run -p 7860:7860 ai-web-apps      # mở http://localhost:7860
 ```
 
-## 10. Sự cố thường gặp
+## 10. Số đo
+
+Đo ngày 2026-09-29 trên **Colab T4 (Tesla T4, 16 GB VRAM)**, gọi qua Cloudflare Tunnel.
+
+| Endpoint | n | Server p50 | Server p95 | Vòng-trip p50 | Vòng-trip p95 |
+|---|---|---|---|---|---|
+| `/api/classify` | 20 | 39 ms | 71 ms | 559 ms | 850 ms |
+| `/api/detect` | 12 | 65 ms | 88 ms | 3802 ms | 3887 ms |
+| `/api/search/text` | 20 | 20 ms | 37 ms | 585 ms | 680 ms |
+| `/api/search/image` | 20 | 44 ms | 66 ms | 605 ms | 697 ms |
+| `/api/chat/sync` | 5 | 3105 ms | 4728 ms | 3527 ms | 5161 ms |
+
+- **Server** = header `X-Process-Time-ms`, chỉ thời gian xử lý bên trong FastAPI.
+- **Vòng-trip** = thời gian client thấy, gồm cả Cloudflare Tunnel (miễn phí, không SLA).
+- `/api/detect` trả ảnh base64 ~368 KB nên vòng-trip chậm hơn server ~60 lần — **nút cổ chai là truyền ảnh, không phải mô hình.**
+- Chất lượng chatbot: truy xuất đúng tài liệu 10/10, trả lời đúng ~6–7/10 trên 10 câu hỏi chuẩn — chi tiết ở [MODEL_CARD.md](MODEL_CARD.md).
+
+Chỉ số mô hình (accuracy, F1, mAP, Precision@k, Hit@k): `artifacts/*/metrics.json`.
+RAM đỉnh khi nạp đủ 4 mô hình: `<đo bằng !free -h trên Colab và điền vào>`.
+
+## 11. Sự cố thường gặp
 
 | Hiện tượng | Cách xử lý |
 |---|---|

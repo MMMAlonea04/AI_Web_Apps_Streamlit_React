@@ -54,6 +54,14 @@ Phần cứng đo: `<GPU T4 16 GB / CPU ...>`. Thời gian suy luận p50/p95 gh
 - **Dữ liệu:** 6 tài liệu Markdown **giả lập** của "ShopLite" trong `data/kb/`. Chunk theo tiêu đề `##`, tối đa 600 ký tự. Embedding đa ngữ MiniLM + FAISS top-3.
 - **Chỉ số:** Hit@1, Hit@3 trên 10 câu hỏi kiểm thử (`scripts/build_artifacts.py::EVAL_QA`) — mẫu quá nhỏ để coi là kết luận chắc chắn.
 - **Giới hạn:** tài liệu không phải chính sách thật của doanh nghiệp nào. Bản `Qwen2.5-0.5B-Instruct` trên CPU yếu rõ rệt so với 1.5B trên GPU — cùng một câu hỏi có thể ra câu trả lời khác nhau. Truy xuất sai đoạn thì câu trả lời sai dù LLM không bịa.
+- **Hành vi đo được** (API công khai, Colab T4, Qwen2.5-1.5B-Instruct, 10 câu hỏi chuẩn):
+  - **Truy xuất đúng tài liệu 10/10.** Khâu truy xuất không phải điểm yếu.
+  - **Trả lời đúng ~6–7/10.** Ba dạng lỗi đã ghi nhận:
+    - *Từ chối sai (false refusal):* "Đơn 250.000đ ở Đà Nẵng phí ship bao nhiêu?" — tài liệu `giao_hang.md` có đáp án (35.000đ ngoại thành) và đã được lấy đúng ở top-1 (0.557), mô hình vẫn trả lời "Tài liệu không cung cấp thông tin".
+    - *Bịa:* "Quên mật khẩu thì làm sao?" — trả lời về quét mã QR code, không có trong tài liệu nào.
+    - *Trả lời lệch mục:* "Một điểm thưởng quy đổi được bao nhiêu tiền?" — trích quy tắc **tích** điểm thay vì quy tắc **dùng** điểm.
+  - Nguyên nhân nằm ở **khâu sinh**, không phải khâu truy xuất. Thử bằng `LLM_MODEL=Qwen/Qwen2.5-3B-Instruct` (đổi biến môi trường, không sửa code) là cách kiểm chứng rẻ nhất.
+- **Nhạy cảm với dấu tiếng Việt:** cùng một câu hỏi gõ **không dấu** làm điểm tương đồng sụp và truy xuất lấy sai tài liệu — "Bảo hành đồ gia dụng bao lâu?" cho `bao_hanh.md` @0.674 và trả lời đúng "24 tháng"; "Bao hanh do gia dung bao lau?" chỉ còn 0.359, lấy `thanh_toan.md` và mô hình trả lời "3 tháng". Người dùng gõ không dấu (rất phổ biến) sẽ nhận câu trả lời sai. Đây là **lỗi nghiêm trọng nhất đã biết** của ứng dụng 4.
 - **Rủi ro:**
   - **Bịa (hallucination):** system prompt yêu cầu chỉ trả lời theo TÀI LIỆU và từ chối khi thiếu thông tin, nhưng không đảm bảo tuyệt đối.
   - **Prompt injection:** đã có 4 câu kiểm thử (`artifacts/rag_probe.json`), gồm câu yêu cầu bỏ qua hướng dẫn và câu hỏi ngoài phạm vi. System prompt có ghi rõ nội dung TÀI LIỆU là dữ liệu tham khảo, không phải mệnh lệnh. **Không có bộ test tự động chống injection** — đây là việc còn thiếu.
