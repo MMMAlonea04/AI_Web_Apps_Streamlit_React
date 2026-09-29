@@ -12,7 +12,7 @@ Bốn mô hình sau **một** backend FastAPI. Tài liệu này nêu dữ liệu
 ## Bảng tổng hợp
 
 | # | Mô hình | Nguồn | Giấy phép | Chỉ số chính | Số đo thực tế |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | 1 | ResNet-18 fine-tune | torchvision `IMAGENET1K_V1` | BSD-3-Clause | test accuracy, macro-F1 | `<...>` / `<...>` |
 | 2 | YOLO11n | Ultralytics (COCO) | **AGPL-3.0** (xem mục 5) | mAP50, mAP50-95 | `<...>` / `<...>` |
 | 3 | CLIP ViT-B/32 | `openai/clip-vit-base-patch32` | MIT | Precision@5 (ảnh→ảnh), Precision@10 (chữ→ảnh) | `<...>` / `<...>` |
@@ -51,7 +51,7 @@ Phần cứng đo: `<GPU T4 16 GB / CPU ...>`. Thời gian suy luận p50/p95 gh
 ## 4. Qwen2.5-Instruct + MiniLM + FAISS — Chatbot RAG
 
 - **Mục đích:** trả lời câu hỏi về chính sách cửa hàng, **chỉ dựa trên tài liệu** và ghi nguồn.
-- **Dữ liệu:** 6 tài liệu Markdown **giả lập** của "ShopLite" trong `data/kb/`. Chunk theo tiêu đề `## `, tối đa 600 ký tự. Embedding đa ngữ MiniLM + FAISS top-3.
+- **Dữ liệu:** 6 tài liệu Markdown **giả lập** của "ShopLite" trong `data/kb/`. Chunk theo tiêu đề `##`, tối đa 600 ký tự. Embedding đa ngữ MiniLM + FAISS top-3.
 - **Chỉ số:** Hit@1, Hit@3 trên 10 câu hỏi kiểm thử (`scripts/build_artifacts.py::EVAL_QA`) — mẫu quá nhỏ để coi là kết luận chắc chắn.
 - **Giới hạn:** tài liệu không phải chính sách thật của doanh nghiệp nào. Bản `Qwen2.5-0.5B-Instruct` trên CPU yếu rõ rệt so với 1.5B trên GPU — cùng một câu hỏi có thể ra câu trả lời khác nhau. Truy xuất sai đoạn thì câu trả lời sai dù LLM không bịa.
 - **Rủi ro:**
