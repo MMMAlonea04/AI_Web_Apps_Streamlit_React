@@ -1,0 +1,17 @@
+web/node_modules
+web/dist
+logs
+.pytest_cache
+.venv
+venv
+dist
+runs
+.git
+.github
+**/__pycache__
+cloudflared
+cloudflared.exe
+*.zip
+*.tgz
+data/flowers
+data/coco128

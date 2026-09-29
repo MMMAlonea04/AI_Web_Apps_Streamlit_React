@@ -1,0 +1,6 @@
+# Gói tối thiểu để test API không cần torch hay mô hình (dùng trong GitHub Actions)
+fastapi>=0.115
+python-multipart
+pillow
+pytest>=7
+httpx

@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+dist/
+
+# Dữ liệu thô tải lại được bằng scripts/build_artifacts.py
+data/flowers/
+data/coco128/
+data/flower_photos.tgz
+data/coco128.zip
+runs/
+
+# Trọng số YOLO tải tự động
+cloudflared
+cloudflared.exe
+logs/
+web/node_modules/
+web/dist/
+
+.env
