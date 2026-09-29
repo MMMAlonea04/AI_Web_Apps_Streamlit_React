@@ -4,21 +4,36 @@ Phiên bản `v1.0` · Cập nhật 2026-09-29 · Nhóm thực hiện: `<tên c�
 
 Bốn mô hình sau **một** backend FastAPI. Tài liệu này nêu dữ liệu, chỉ số, giới hạn và cách dùng đúng/sai.
 
-> ⚠️ Các ô `<...>` là số **phải điền sau khi chạy** `python scripts/build_artifacts.py all` trên Colab.
-> Nguồn số: `artifacts/classifier/metrics.json`, `artifacts/detector/metrics.json`,
-> `artifacts/retrieval/metrics.json`, `artifacts/rag_metrics.json`.
-> **Không điền số ước lượng — số bịa trong model card là lỗi nghiêm trọng.**
+> ✅ Số trong bảng là **đo thật**, không ước lượng. Số thô và cách đo ở [docs/measurements/](docs/measurements/).
+> Nguồn sinh lại: `artifacts/classifier/metrics.json`, `artifacts/detector/metrics.json`,
+> `artifacts/retrieval/metrics.json`, `artifacts/rag_metrics.json` (chạy `python scripts/build_artifacts.py all`).
+> Ô `<...>` còn lại là tên thành viên nhóm — phần đó do nhóm tự điền.
 
 ## Bảng tổng hợp
 
 | # | Mô hình | Nguồn | Giấy phép | Chỉ số chính | Số đo thực tế |
 | --- | --- | --- | --- | --- | --- |
-| 1 | ResNet-18 fine-tune | torchvision `IMAGENET1K_V1` | BSD-3-Clause | test accuracy, macro-F1 | `<...>` / `<...>` |
-| 2 | YOLO11n | Ultralytics (COCO) | **AGPL-3.0** (xem mục 5) | mAP50, mAP50-95 | `<...>` / `<...>` |
-| 3 | CLIP ViT-B/32 | `openai/clip-vit-base-patch32` | MIT | Precision@5 (ảnh→ảnh), Precision@10 (chữ→ảnh) | `<...>` / `<...>` |
-| 4 | Qwen2.5-Instruct + MiniLM | `Qwen/Qwen2.5-1.5B-Instruct`, `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | Apache-2.0 | Hit@1, Hit@3 | `<...>` / `<...>` |
+| 1 | ResNet-18 fine-tune | torchvision `IMAGENET1K_V1` | BSD-3-Clause | test accuracy, macro-F1 | **0.9510** / **0.9509** |
+| 2 | YOLO11n | Ultralytics (COCO) | **AGPL-3.0** (xem mục 5) | mAP50, mAP50-95 | **0.6696** / **0.5024** |
+| 3 | CLIP ViT-B/32 | `openai/clip-vit-base-patch32` | MIT | Precision@5 (ảnh→ảnh), Precision@10 (chữ→ảnh) | **0.9440** / **1.0000** |
+| 4 | Qwen2.5-Instruct + MiniLM | `Qwen/Qwen2.5-1.5B-Instruct`, `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | Apache-2.0 | Hit@1, Hit@3 | **1.00** / **1.00** |
 
-Phần cứng đo: `<GPU T4 16 GB / CPU ...>`. Thời gian suy luận p50/p95 ghi ở README (nhiệm vụ C5).
+**Cách đo** (chi tiết và số thô ở [docs/measurements/](docs/measurements/)):
+
+| Chỉ số | Đo ở đâu | Trên bao nhiêu mẫu |
+| --- | --- | --- |
+| Classifier accuracy, macro-F1 | Qua **API công khai trên Colab T4** (Tesla T4, 16 GB VRAM) | Toàn bộ **367 ảnh** tập test |
+| Detector mAP50, mAP50-95 | **Local CPU** (AMD Ryzen 5 5600), cùng trọng số YOLO11n | 128 ảnh COCO128, 929 đối tượng |
+| Retrieval Precision@5 | Qua **API công khai** | 50 truy vấn ảnh, 10 ảnh mỗi loài |
+| Retrieval Precision@10 | Qua **API công khai** | 5 truy vấn chữ, `"a photo of <loài>"` |
+| RAG Hit@1, Hit@3 | Qua **API công khai** | 10 câu hỏi chuẩn |
+
+Độ trễ p50/p95 của API ghi ở [README](README.md) mục 10.
+
+> Đọc số cho đúng: **Precision@10 = 1.00 là bài đo dễ**, không phải kết luận tổng quát —
+> câu truy vấn `"a photo of daisy"` gần như trùng khớp với cách gán nhãn của kho ảnh. **Hit@1 = 1.00
+> chỉ trên 10 câu hỏi**, mẫu quá nhỏ. **mAP trên COCO128 chính là dữ liệu mô hình đã học**, nên lạc quan
+> hơn thực tế. Con số đáng tin nhất là accuracy 0.9510 trên 367 ảnh test tách hẳn khỏi tập train.
 
 ## 1. ResNet-18 — Phân loại loài hoa
 
@@ -42,7 +57,7 @@ Phần cứng đo: `<GPU T4 16 GB / CPU ...>`. Thời gian suy luận p50/p95 gh
 ## 3. CLIP ViT-B/32 + FAISS — Tìm kiếm ảnh
 
 - **Mục đích:** gõ mô tả hoặc tải ảnh mẫu → trả các ảnh gần nhất trong kho.
-- **Dữ liệu:** kho ảnh dựng sẵn gồm COCO128 (nhãn = đối tượng YOLO phát hiện được) + 100 ảnh mỗi loài hoa, tổng `<gallery_size>`. Vector đã chuẩn hoá, chỉ mục `IndexFlatIP` = cosine.
+- **Dữ liệu:** kho ảnh dựng sẵn gồm COCO128 (nhãn = đối tượng YOLO phát hiện được) + 100 ảnh mỗi loài hoa, tổng **628 ảnh** (xác nhận lại bằng cách dò `/api/gallery/{id}`). Vector đã chuẩn hoá, chỉ mục `IndexFlatIP` = cosine.
 - **Giới hạn:** **truy vấn văn bản chỉ hiệu quả bằng tiếng Anh** — CLIP gốc không hỗ trợ tiếng Việt. Kho ảnh nhỏ nên con số Precision đo được **không suy ra được** cho kho 10.000 ảnh. CLIP thiên lệch về văn hoá/đối tượng phương Tây (thiên lệch dữ liệu huấn luyện LAION/OpenAI). Kết quả nhạy với cách diễn đạt truy vấn.
 - **Rủi ro:** thiên lệch trong xếp hạng ảnh (giới tính, màu da, quốc tịch) nếu dùng để lọc/tuyển chọn con người.
 - **Dùng đúng:** tìm ảnh trong kho nội bộ, khám phá nội dung.

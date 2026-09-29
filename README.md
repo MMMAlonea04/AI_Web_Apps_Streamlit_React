@@ -91,7 +91,7 @@ nên đổi runtime sau khi đã chạy thì phải Restart.
 Mỗi ô dán riêng một cell. Dùng `requirements-colab.txt` (không cài lại torch vì Colab đã có bản khớp CUDA):
 
 ```python
-!git clone https://github.com/<tài-khoản>/ai-web-apps.git /content/ai_web_apps
+!git clone https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/ai_web_apps
 ```
 
 ```python
@@ -228,8 +228,8 @@ docker run -p 7860:7860 ai-web-apps      # mở http://localhost:7860
 - `/api/detect` trả ảnh base64 ~368 KB nên vòng-trip chậm hơn server ~60 lần — **nút cổ chai là truyền ảnh, không phải mô hình.**
 - Chất lượng chatbot: truy xuất đúng tài liệu 10/10, trả lời đúng ~6–7/10 trên 10 câu hỏi chuẩn — chi tiết ở [MODEL_CARD.md](MODEL_CARD.md).
 
-Chỉ số mô hình (accuracy, F1, mAP, Precision@k, Hit@k): `artifacts/*/metrics.json`.
-RAM đỉnh khi nạp đủ 4 mô hình: `<đo bằng !free -h trên Colab và điền vào>`.
+Chỉ số mô hình (accuracy, F1, mAP, Precision@k, Hit@k) và cách đo: [MODEL_CARD.md](MODEL_CARD.md),
+số thô ở [docs/measurements/](docs/measurements/).
 
 ## 11. Sự cố thường gặp
 

@@ -64,9 +64,11 @@ except ImportError:
 
 
 def ensure_dirs() -> None:
-    for d in ["data/kb", "artifacts/classifier", "artifacts/detector", "artifacts/retrieval",
-              "artifacts/figures", "logs"]:
-        (ROOT / d).mkdir(parents=True, exist_ok=True)
+    # Tạo theo config.ROOT chứ không theo vị trí file script: APP_ROOT có thể bị ghi đè
+    # bằng biến môi trường (Docker, HF Spaces) và khi đó hai đường dẫn này khác nhau.
+    for d in [DATA_DIR / "kb", ART_DIR / "classifier", ART_DIR / "detector", ART_DIR / "retrieval",
+              ART_DIR / "figures", DATA_DIR / "gallery", config.ROOT / "logs"]:
+        Path(d).mkdir(parents=True, exist_ok=True)
 
 
 def save_fig(fig, name: str) -> None:
@@ -291,6 +293,28 @@ def _ensure_yolo_weights() -> str:
     return str(path) if path.exists() else "yolo11n.pt"
 
 
+def _coco128_yaml() -> Path:
+    """Yaml trỏ vào COCO128 đã tải trong DATA_DIR.
+
+    Để nguyên `data="coco128.yaml"` thì ultralytics tải bản sao thứ hai vào thư mục datasets
+    toàn cục — tốn thêm 7 MB và có thể lỗi quyền ghi (đã gặp trên Windows).
+    """
+    import ultralytics
+
+    src = Path(ultralytics.__file__).resolve().parent / "cfg" / "datasets" / "coco128.yaml"
+    lines = []
+    for line in src.read_text(encoding="utf-8").splitlines():
+        if line.startswith("path:"):
+            lines.append(f"path: {COCO_DIR.as_posix()}")   # dataset root dir
+        elif line.startswith("download:"):
+            continue                                       # đã có sẵn, không tải lại
+        else:
+            lines.append(line)
+    dst = ART_DIR / "detector" / "coco128.local.yaml"
+    dst.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return dst
+
+
 def stage_detector(args) -> None:
     import core.detector as det
     from ultralytics.utils import ASSETS
@@ -318,7 +342,7 @@ def stage_detector(args) -> None:
             ax.set_title(title, fontsize=9)
         save_fig(fig, "04_detector_ket_qua.png")
 
-    val = detector.model.val(data="coco128.yaml", imgsz=640, batch=16, device=detector.device,
+    val = detector.model.val(data=str(_coco128_yaml()), imgsz=640, batch=16, device=detector.device,
                              plots=False, verbose=False)
     metrics = {"mAP50": float(val.box.map50), "mAP50_95": float(val.box.map), "dataset": "coco128",
                "model": "yolo11n", "device": DEVICE}

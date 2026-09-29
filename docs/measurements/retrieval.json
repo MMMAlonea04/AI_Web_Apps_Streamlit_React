@@ -1,0 +1,13 @@
+{
+ "image_to_image_precision@5": 0.944,
+ "text_to_image_precision@10": {
+  "daisy": 1.0,
+  "dandelion": 1.0,
+  "roses": 1.0,
+  "sunflowers": 1.0,
+  "tulips": 1.0
+ },
+ "precision@10_mean": 1.0,
+ "n_image_queries": 50,
+ "note": "do qua API cong khai tren chi muc da build tren Colab T4"
+}

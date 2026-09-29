@@ -1,0 +1,14 @@
+{
+ "test_accuracy": 0.9509536784741145,
+ "test_macro_f1": 0.9508784565931061,
+ "n_test": 367,
+ "errors": 0,
+ "classes": [
+  "daisy",
+  "dandelion",
+  "roses",
+  "sunflowers",
+  "tulips"
+ ],
+ "split": "SEED=42 stratified 80/10/10"
+}
