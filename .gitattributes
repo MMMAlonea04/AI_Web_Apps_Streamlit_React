@@ -1,0 +1,13 @@
+# Giữ LF cho mọi file text, bất kể core.autocrlf trên máy Windows.
+# Dự án chạy ở cả Windows (soạn code) và Linux/Colab/Docker (chạy) — CRLF trong Dockerfile
+# hoặc file .py có thể gây lỗi khó tìm.
+* text=auto eol=lf
+
+*.ipynb text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pt binary
+*.pth binary
+*.faiss binary
+*.zip binary
