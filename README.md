@@ -64,9 +64,11 @@ Danh sách đầy đủ và ý nghĩa từng ảnh: [docs/screenshots/](docs/scr
 py -3 -m venv .venv
 .venv\Scripts\activate                 # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
-python scripts/build_artifacts.py all  # sinh artifacts (~15 phút trên GPU, 1–2 giờ trên CPU)
-python scripts/serve.py api
+python scripts/serve.py api            # artifacts/ và data/gallery/ đã có sẵn trong repo
 ```
+
+Muốn sinh lại từ đầu (không cần thiết): `python scripts/build_artifacts.py all` — ~15 phút trên GPU,
+1–2 giờ trên CPU.
 
 Trên máy **không có GPU NVIDIA**, `pip install torch` từ PyPI đã là bản CPU nên không cần làm gì thêm.
 Chạy trên CPU vẫn ra đủ 4 bộ artifacts, nhưng classifier chỉ học 1 epoch trên 800 ảnh
@@ -105,6 +107,9 @@ Mỗi ô dán riêng một cell. Dùng `requirements-colab.txt` (không cài l�
 ```python
 !python scripts/build_artifacts.py all          # ~15–25 phút trên T4
 ```
+
+Bước này **chỉ cần khi muốn huấn luyện/lập chỉ mục lại**. Repo đã kèm sẵn `artifacts/` và
+`data/gallery/` sinh từ chính lần chạy T4 này, nên muốn demo ngay thì bỏ qua cell trên và đi tiếp.
 
 Sinh xong artifacts thì **sao lưu ngay** — `/content` mất khi hết phiên. Phải mount Drive trước:
 
@@ -167,8 +172,9 @@ Kiểm thử thật (cần artifacts): `python scripts/smoke_test.py` khi API đ
 | **VPS có GPU** | Dự án thật | `docker run --gpus all`, đặt sau Nginx + HTTPS | Theo máy |
 | **Vercel / Netlify** | Chỉ React | Build `web/`, đặt `VITE_API_URL` = địa chỉ API, bật CORS ở API | Miễn phí |
 
-`Dockerfile` **cần `artifacts/` và `data/gallery/` có sẵn** trước khi build — chạy `build_artifacts.py` trước,
-hoặc để Space tải từ Hugging Face Hub lúc khởi động.
+`Dockerfile` chỉ cần `artifacts/` và `data/gallery/` — **repo đã kèm sẵn hai thư mục này** (~100 MB,
+sinh từ lần chạy Colab T4), nên `docker build` chạy được ngay sau khi clone. Muốn image nhẹ hơn thì
+để Space tải trọng số từ Hugging Face Hub lúc khởi động và thêm hai thư mục đó vào `.dockerignore`.
 
 Lưu ý khi lên production: gói miễn phí không có GPU nên đặt `ENABLED_MODELS` gọn và
 `LLM_MODEL=Qwen/Qwen2.5-0.5B-Instruct`; đặt `CORS_ORIGINS` đúng tên miền giao diện; không commit API key.
@@ -206,8 +212,7 @@ Tài liệu tương tác: `/docs`.
 ## 9. Docker
 
 ```bash
-python scripts/build_artifacts.py all
-docker build -t ai-web-apps .
+docker build -t ai-web-apps .            # artifacts/ và data/gallery/ đã có sẵn trong repo
 docker run -p 7860:7860 ai-web-apps      # mở http://localhost:7860
 ```
 
