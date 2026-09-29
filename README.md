@@ -18,6 +18,44 @@ Trình duyệt ──► React (web/dist) ─┘
 `core/` chỉ chứa suy luận · `api/` bọc thành HTTP · `streamlit_app.py` và `web/` chỉ là giao diện.
 Đổi mô hình không phải sửa giao diện.
 
+## Ảnh giao diện
+
+Chụp từ phiên chạy thật trên **Colab T4 (Tesla T4, 16 GB VRAM)**, truy cập qua Cloudflare Tunnel.
+Danh sách đầy đủ và ý nghĩa từng ảnh: [docs/screenshots/](docs/screenshots/).
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/01-tong-quan-streamlit.png" alt="Tổng quan"><br>
+<sub><b>Khởi động</b> — sidebar báo <code>Backend: 🟢 cuda</code> và cả 4 mô hình đã nạp ✅</sub></td>
+<td width="50%"><img src="docs/screenshots/02-phan-loai.png" alt="Phân loại ảnh"><br>
+<sub><b>1. Phân loại ảnh</b> — ảnh hướng dương → <code>sunflowers 88.6%</code>, kèm độ trễ</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/03-phat-hien.png" alt="Phát hiện đối tượng"><br>
+<sub><b>2. Phát hiện đối tượng</b> — YOLO11n vẽ hộp lên ảnh + bảng toạ độ <code>{bus: 1, person: 4}</code></sub></td>
+<td width="50%"><img src="docs/screenshots/04-tim-anh.png" alt="Tìm kiếm ảnh"><br>
+<sub><b>3. Tìm kiếm ảnh</b> — gõ câu mô tả, trả về lưới ảnh xếp theo điểm tương đồng</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/05-chatbot-nguon.png" alt="Chatbot RAG"><br>
+<sub><b>4. Chatbot RAG</b> — trả lời theo tài liệu và <b>mở phần "Nguồn đã dùng"</b></sub></td>
+<td width="50%"><img src="docs/screenshots/06-ca-mo-hinh-sai.png" alt="Ca mô hình sai"><br>
+<sub><b>Ca mô hình sai</b> — <code>bus.jpg</code> bị đoán là <code>tulips</code>, hệ thống <b>báo "không chắc chắn"</b> thay vì khẳng định sai</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/07-react-phat-hien.png" alt="React - phát hiện"><br>
+<sub><b>Giao diện thứ hai (React)</b> — cùng backend, bố cục khác, bảng 3 cột Lớp / Độ tin cậy / Hộp</sub></td>
+<td width="50%"><img src="docs/screenshots/08-react-chatbot.png" alt="React - chatbot"><br>
+<sub><b>React</b> — chatbot chạy streaming, có nút <b>Dừng</b>, mở được <code>Nguồn (3)</code></sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/09-swagger-docs.png" alt="Swagger"><br>
+<sub><b>Backend</b> — 8 endpoint của FastAPI, tài liệu tự sinh tại <code>/docs</code></sub></td>
+<td width="50%"><img src="docs/screenshots/10-dien-thoai.png" alt="Trên điện thoại"><br>
+<sub><b>Trên điện thoại</b> — cùng link công khai, không cần cài gì</sub></td>
+</tr>
+</table>
+
 ## 1. Yêu cầu môi trường
 
 | Thành phần | Phiên bản | Ghi chú |
@@ -216,3 +254,35 @@ Chỉ số đã đo: `artifacts/classifier/metrics.json`, `artifacts/detector/me
 `artifacts/retrieval/metrics.json`, `artifacts/rag_metrics.json`.
 
 Giới hạn, rủi ro và **vấn đề giấy phép** (YOLO11n là AGPL-3.0): xem [MODEL_CARD.md](MODEL_CARD.md).
+
+## Khai báo sử dụng AI
+
+Bài tập cho phép dùng AI nhưng yêu cầu ghi rõ công cụ và phiên bản, nên khai báo tách thành hai tầng.
+
+### Tầng 1 — AI hỗ trợ trong quá trình làm bài
+
+| Công cụ | Phiên bản / mô hình | Dùng vào việc gì |
+|---|---|---|
+| **Kimi Code CLI** (Moonshot AI) | mô hình `deepseek-flash` | Trích code từ notebook của thầy thành repo chạy được; viết `scripts/build_artifacts.py`, `scripts/serve.py`, `scripts/smoke_test.py`, `tests/`, `.gitignore`, `.gitattributes`, `Dockerfile`; tìm và sửa lỗi; chạy kiểm thử API và đo độ trễ; viết README và `MODEL_CARD.md` |
+| `<công cụ khác nếu có>` | `<version>` | `<dùng làm gì>` |
+
+Phần nào của nhóm, phần nào của AI: kiến trúc, mô hình và code gốc lấy từ notebook của thầy.
+Nhóm chạy, kiểm chứng trên Colab T4 và trên link công khai, chụp ảnh minh chứng, quyết định nội dung báo cáo.
+AI hỗ trợ chuyển notebook thành repo, sửa lỗi phát hiện khi chạy, và viết tài liệu.
+
+### Tầng 2 — Các mô hình AI nằm trong sản phẩm
+
+| Mô hình | Phần mềm / phiên bản | Giấy phép | Vai trò |
+|---|---|---|---|
+| ResNet-18 | torchvision 0.29.0, trọng số `IMAGENET1K_V1` rồi fine-tune | BSD-3-Clause | Phân loại 5 loài hoa |
+| YOLO11n | ultralytics 8.4.165 | **AGPL-3.0** | Phát hiện 80 lớp COCO |
+| CLIP ViT-B/32 | transformers 5.17.0, `openai/clip-vit-base-patch32` | MIT | Mã hoá ảnh và câu chữ để tìm kiếm |
+| paraphrase-multilingual-MiniLM-L12-v2 | sentence-transformers 6.1.0 | Apache-2.0 | Embedding tài liệu cho RAG |
+| Qwen2.5-1.5B-Instruct | transformers 5.17.0 (GPU) · `-0.5B-Instruct` khi chạy CPU | Apache-2.0 | Sinh câu trả lời của chatbot |
+
+Thư viện chính: `torch 2.14.0`, `torchvision 0.29.0`, `faiss-cpu 1.15.1`, `fastapi 0.141.1`, `uvicorn`,
+`pydantic`, `streamlit 1.64.0`, `vite 8.3.1`, `React 19.2.0`, `Node 22`.
+
+> **YOLO11n là AGPL-3.0.** Nếu đưa sản phẩm này lên mạng cho người khác dùng thì AGPL buộc phải mở
+> mã nguồn toàn bộ. Dùng cho mục đích học tập thì không vấn đề, nhưng phải nêu rõ. Chi tiết ở
+> [MODEL_CARD.md](MODEL_CARD.md) mục 5.
