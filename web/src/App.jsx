@@ -25,10 +25,20 @@ const SOURCE_LABEL = {
 const RETRY_MS = 3000;
 const MAX_TRIES = 20;
 
+const readHash = () => {
+  const id = location.hash.replace(/^#/, '');
+  return TABS.some((t) => t.id === id) ? id : 'classify';
+};
+
 export default function App() {
-  const [tab, setTab] = useState('classify');
+  const [tab, setTab] = useState(readHash);
   const [health, setHealth] = useState(null);
   const [tries, setTries] = useState(0);
+
+  function selectTab(id) {
+    setTab(id);
+    location.hash = id;
+  }
 
   useEffect(() => {
     let stop = false;
@@ -48,6 +58,12 @@ export default function App() {
 
     check(1);
     return () => { stop = true; clearTimeout(timer); };
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => setTab(readHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   const current = TABS.find((t) => t.id === tab);
@@ -72,7 +88,7 @@ export default function App() {
       <nav className="tabs" role="tablist">
         {TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'active' : ''}
-                  onClick={() => setTab(t.id)}>
+                  onClick={() => selectTab(t.id)}>
             {t.label}{online && !health.models?.[t.model] ? ' (tắt)' : ''}
           </button>
         ))}

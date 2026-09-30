@@ -22,7 +22,7 @@ export default function Classify() {
         <ImagePicker onChange={run} />
       </div>
       <div>
-        {state.status === 'loading' && <p>Đang dự đoán…</p>}
+        {state.status === 'loading' && <p className="loading"><span className="spinner" aria-hidden="true" /> Đang dự đoán…</p>}
         {state.status === 'error' && <p className="error">{state.error}</p>}
         {state.status === 'ok' && (
           <>

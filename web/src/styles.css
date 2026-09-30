@@ -1,7 +1,8 @@
-:root { --bg: #f5f3ee; --card: #fdfcf9; --ink: #1b2433; --muted: #5e6a7a; --accent: #0b6e99; --line: #dcd8ce; --err: #b3261e; }
+:root { --bg: #faf5ef; --card: #fdfcf9; --ink: #1b2433; --muted: #5e6a7a; --accent: #c2447d; --line: #e6dcd1; --err: #b3261e; }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--ink); }
 .app { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+header { background: linear-gradient(120deg, #fdeef5, #fdf4e0); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; }
 header h1 { margin: 0 0 4px; }
 header .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 header .logo { width: 38px; height: 38px; }
@@ -16,7 +17,7 @@ main { background: var(--card); border: 1px solid var(--line); border-radius: 16
 .picker { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .preview { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); }
 .bar { display: grid; grid-template-columns: 110px 1fr 60px; align-items: center; gap: 8px; margin: 8px 0; }
-.track { background: #e9e6df; border-radius: 999px; height: 12px; overflow: hidden; }
+.track { background: #efe6dc; border-radius: 999px; height: 12px; overflow: hidden; }
 .fill { background: var(--accent); height: 100%; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); }
@@ -29,4 +30,9 @@ figure { margin: 0; } figcaption { font-size: 13px; color: var(--muted); }
 .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; }
 .msg p { margin: 0; }
 .msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
-.msg.assistant { align-self: flex-start; background: #eef3f6; }
+.msg.assistant { align-self: flex-start; background: #f8edf3; }
+.chip { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 4px 12px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px; }
+.chip:hover { background: #fdeef5; }
+.loading { display: flex; align-items: center; gap: 8px; }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

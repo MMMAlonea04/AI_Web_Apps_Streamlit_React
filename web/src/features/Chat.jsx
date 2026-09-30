@@ -6,6 +6,14 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const abortRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const suggestions = ['Hoa hồng cần tưới bao nhiêu nước?', 'Củ tulip trồng vào mùa nào?', 'Cây bị phấn trắng thì làm sao?'];
+
+  function pick(text) {
+    setInput(text);
+    inputRef.current?.focus();
+  }
 
   async function send(e) {
     e.preventDefault();
@@ -48,8 +56,13 @@ export default function Chat() {
           </div>
         ))}
       </div>
+      <div className="row">
+        {suggestions.map((s) => (
+          <button key={s} type="button" className="chip" onClick={() => pick(s)}>{s}</button>
+        ))}
+      </div>
       <form className="row" onSubmit={send}>
-        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Hoa hồng cần tưới bao nhiêu nước?" aria-label="Câu hỏi" />
+        <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Hoa hồng cần tưới bao nhiêu nước?" aria-label="Câu hỏi" />
         {busy
           ? <button type="button" className="button" onClick={() => abortRef.current?.abort()}>Dừng</button>
           : <button type="submit" className="button">Gửi</button>}

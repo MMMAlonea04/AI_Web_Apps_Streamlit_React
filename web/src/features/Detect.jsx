@@ -29,7 +29,7 @@ export default function Detect() {
         <ImagePicker onChange={(f) => { setFile(f); run(f); }} />
       </div>
       <div>
-        {state.status === 'loading' && <p>Đang phát hiện…</p>}
+        {state.status === 'loading' && <p className="loading"><span className="spinner" aria-hidden="true" /> Đang phát hiện…</p>}
         {state.status === 'error' && <p className="error">{state.error}</p>}
         {state.status === 'ok' && (
           <>
