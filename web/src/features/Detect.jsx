@@ -20,7 +20,7 @@ export default function Detect() {
   return (
     <section className="grid">
       <div>
-        <h2>Phát hiện đối tượng</h2>
+        <h2>Mắt thần vườn</h2>
         <p className="muted">YOLO11n, 80 lớp COCO (người, xe, động vật, đồ vật…).</p>
         <label>Ngưỡng tin cậy: {conf.toFixed(2)}
           <input type="range" min="0.05" max="0.95" step="0.05" value={conf}

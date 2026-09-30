@@ -176,7 +176,7 @@ def build_one_page() -> Path:
     prs = new_prs()
     s = new_slide(prs)
     head(s, "Cách làm — 3 tầng, 5 bước, 4 chức năng chạy thật",
-         "AI Web Apps · Lập trình Web nâng cao · nộp 01/10/2026 · " + GITHUB)
+         "Vườn Hoa AI · Lập trình Web nâng cao · nộp 01/10/2026 · " + GITHUB)
     box(s, 0.5, 1.3, 6.2, 0.3, ["CÁCH LÀM"], 13, True, ACC)
     box(s, 0.5, 1.68, 6.2, 3.5, [
         "1.  Tách 3 tầng: core/ chỉ suy luận → api/ bọc HTTP → giao diện chỉ gọi API.",
@@ -197,10 +197,10 @@ def build_one_page() -> Path:
     box(s, 6.9, 1.3, 5.95, 0.3, ["4 CHỨC NĂNG + SỐ ĐO"], 13, True, ACC)
     rows = [
         ("Chức năng", "Số đo thực tế"),
-        ("1. Phân loại ảnh", f"accuracy {f4(CLF,'test_accuracy')} · 39 ms"),
-        ("2. Phát hiện đối tượng", f"mAP50 {f4(DET,'mAP50')} · 65 ms"),
-        ("3. Tìm kiếm ảnh", f"Precision@5 {f4(RET,'image_to_image_precision@5')} · 20 ms"),
-        ("4. Chatbot RAG", f"Hit@1 {RAG.get('hit@1',0):.2f} · 3.105 ms"),
+        ("1. Kính lúp hoa", f"accuracy {f4(CLF,'test_accuracy')} · 39 ms"),
+        ("2. Mắt thần vườn", f"mAP50 {f4(DET,'mAP50')} · 65 ms"),
+        ("3. Album hoa", f"Precision@5 {f4(RET,'image_to_image_precision@5')} · 20 ms"),
+        ("4. Cô làm vườn (RAG)", f"Hit@1 {RAG.get('hit@1',0):.2f} · 3.105 ms"),
     ]
     table(s, 6.9, 1.68, rows, [3.0, 2.95], 9.5)
     box(s, 6.9, 3.65, 5.95, 2.5, [
@@ -226,7 +226,7 @@ def build_five_pages() -> Path:
 
     # --- 1
     s = new_slide(prs)
-    head(s, "AI Web Apps — 4 chức năng AI sau một backend FastAPI",
+    head(s, "Vườn Hoa AI — 4 chức năng AI sau một backend FastAPI",
          "Lập trình Web nâng cao · nộp 01/10/2026 · " + GITHUB)
     box(s, 0.5, 1.35, 5.6, 0.3, ["THẦY GIAO GÌ"], 13, True, ACC)
     box(s, 0.5, 1.72, 5.6, 2.2, [

@@ -8,7 +8,7 @@ import requests
 import streamlit as st
 from PIL import Image
 
-st.set_page_config(page_title="AI Web Apps", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Vườn Hoa AI", page_icon="🌸", layout="wide")
 API_URL = st.sidebar.text_input("API URL", os.environ.get("API_URL", "http://localhost:8000")).rstrip("/")
 
 
@@ -45,9 +45,9 @@ def upload(label: str, key: str):
     return f
 
 
-st.title("🤖 AI Web Apps")
-st.caption("Phân loại ảnh · Phát hiện đối tượng · Tìm kiếm ảnh · Chatbot RAG — một backend FastAPI, hai giao diện Streamlit & React")
-tab1, tab2, tab3, tab4 = st.tabs(["🌼 Phân loại", "🚗 Phát hiện", "🔎 Tìm ảnh", "💬 Chatbot"])
+st.title("🌸 Vườn Hoa AI")
+st.caption("Kính lúp hoa · Mắt thần vườn · Album hoa · Cô làm vườn — một backend FastAPI, hai giao diện Streamlit & React")
+tab1, tab2, tab3, tab4 = st.tabs(["🌼 Kính lúp hoa", "🚗 Mắt thần vườn", "🔎 Album hoa", "💬 Cô làm vườn"])
 
 with tab1:
     c1, c2 = st.columns(2)
@@ -79,7 +79,7 @@ with tab3:
     k = st.slider("Số kết quả", 4, 24, 8, 4)
     res = None
     if mode.startswith("Câu"):
-        q = st.text_input("Ví dụ: a red flower, a dog on a sofa, people riding bikes", "yellow sunflowers in a field")
+        q = st.text_input("Ví dụ: a red rose in a garden, a dog on a sofa", "yellow sunflowers in a field")
         if q:
             res = post("/api/search/text", json={"query": q, "k": k})
     else:
@@ -94,7 +94,7 @@ with tab3:
             cols[i % 4].image(img_bytes, caption=f"{r['label']} · {r['score']:.3f}", width="stretch")
 
 with tab4:
-    st.info("Trợ lý ShopLite trả lời dựa trên tài liệu chính sách (RAG). Thử: *Đổi trả trong bao lâu?*")
+    st.info("Cô làm vườn trả lời dựa trên tài liệu chăm sóc hoa (RAG). Thử: *Hoa hồng cần tưới bao nhiêu nước?*")
     if "chat" not in st.session_state:
         st.session_state.chat = []
     for m in st.session_state.chat:

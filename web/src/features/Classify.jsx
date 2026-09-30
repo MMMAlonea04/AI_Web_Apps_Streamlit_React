@@ -17,7 +17,7 @@ export default function Classify() {
   return (
     <section className="grid">
       <div>
-        <h2>Phân loại hoa</h2>
+        <h2>Kính lúp hoa</h2>
         <p className="muted">ResNet-18 fine-tune trên 5 loài: daisy, dandelion, roses, sunflowers, tulips.</p>
         <ImagePicker onChange={run} />
       </div>

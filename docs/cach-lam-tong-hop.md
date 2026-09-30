@@ -1,4 +1,4 @@
-# Tổng hợp cách làm — AI Web Apps (Streamlit & React)
+# Tổng hợp cách làm — Vườn Hoa AI (Streamlit & React)
 
 Tài liệu này gom **toàn bộ đường đi** của dự án: dữ liệu lấy ở đâu, 4 ứng dụng dùng mô hình gì và đo
 được bao nhiêu, cách sinh artifacts, cách kiểm thử, cách triển khai công khai, và những lỗi đã gặp cùng
@@ -6,7 +6,7 @@ cách sửa. Số liệu đều là **đo thật** trong `artifacts/`; chi tiế
 [MODEL_CARD.md](../MODEL_CARD.md), số thô ở [measurements/](measurements/).
 
 **Sáu câu tóm tắt:** một backend FastAPI giữ 4 mô hình, hai giao diện (Streamlit và React) chỉ gọi HTTP.
-Dữ liệu tự tải bằng script (TF Flowers 3.670 ảnh, COCO128, 6 tài liệu chính sách giả lập). Bốn ứng dụng:
+Dữ liệu tự tải bằng script (TF Flowers 3.670 ảnh, COCO128, 8 tài liệu chăm sóc hoa tiếng Việt). Bốn ứng dụng:
 phân loại hoa (accuracy **0.9510**), phát hiện đối tượng (mAP50 **0.6696**), tìm kiếm ảnh (Precision@5
 **0.8760**), chatbot RAG (Hit@1 **1.00** trên 10 câu). Triển khai: backend chạy trên **Colab T4 +
 Cloudflare Tunnel** (miễn phí, có GPU), giao diện trên **Netlify**, hai bên tự nối với nhau qua một
@@ -37,7 +37,7 @@ lúc khởi động; một mô hình nạp lỗi chỉ khiến `/api/health` bá
 | **TF Flowers** | Ứng dụng 1 (huấn luyện) | 3.670 ảnh / 5 lớp (daisy, dandelion, roses, sunflowers, tulips) | `python scripts/build_artifacts.py data` (tự tải) | Chia phân tầng 80/10/10 = 2.936 / 367 / 367, cố định `SEED=42`, lưu ở `artifacts/classifier/split.json`. Tăng cường chỉ áp cho tập train |
 | **COCO128** | Ứng dụng 2 (đánh giá) + kho ảnh của ứng dụng 3 | 128 ảnh, 929 đối tượng | như trên | Ảnh này nằm trong tập COCO mà YOLO đã học → mAP đo được **lạc quan hơn thực tế** |
 | **Kho ảnh gallery** | Ứng dụng 3 (truy vấn) | **628 ảnh** = 128 COCO128 + 100 × 5 loài hoa | Sinh ở stage `retrieval` | Nhãn COCO do chính YOLO gán → 95 nhãn khác nhau. Ảnh nằm trong `data/gallery/` (đã commit) |
-| **6 tài liệu ShopLite** | Ứng dụng 4 (RAG) | 6 file Markdown | Có sẵn ở `data/kb/` | Là **chính sách giả lập**, không phải của doanh nghiệp thật |
+| **8 tài liệu chăm sóc hoa** | Ứng dụng 4 (RAG) | 8 file Markdown | Có sẵn ở `data/kb/` | Tự biên soạn cho chủ đề hoa: chăm sóc cơ bản, 5 loài hoa, sâu bệnh, hoa theo mùa |
 
 Dữ liệu thô (`data/flowers/`, `data/coco128/`) **không commit** — bị chặn trong `.gitignore` vì tải lại
 được bằng script; chỉ `data/kb/` và `data/gallery/` (39 MB) nằm trong repo để bản Docker chạy được ngay.
@@ -49,7 +49,7 @@ Dữ liệu thô (`data/flowers/`, `data/coco128/`) **không commit** — bị c
 | 1 | Nhận diện loài hoa | ResNet-18 fine-tune từ ImageNet | `POST /api/classify` | test accuracy **0.9510**, macro-F1 **0.9509** (367 ảnh test) |
 | 2 | Phát hiện đối tượng | YOLO11n (COCO, 80 lớp, không huấn luyện lại) | `POST /api/detect` | mAP50 **0.6696**, mAP50-95 **0.5024** (128 ảnh COCO128) |
 | 3 | Tìm kiếm ảnh | CLIP ViT-B/32 + FAISS `IndexFlatIP` | `POST /api/search/text`, `/api/search/image`, `GET /api/gallery/{id}` | ảnh→ảnh Precision@5 **0.8760** (50 truy vấn); chữ→ảnh Precision@10 **1.00** (5 truy vấn, bài đo dễ) |
-| 4 | Chatbot chính sách | Qwen2.5-Instruct + MiniLM + FAISS top-3 | `POST /api/chat` (SSE), `POST /api/chat/sync` | Hit@1 **1.00**, Hit@3 **1.00** (10 câu); chất lượng trả lời thực tế **~6–7/10** |
+| 4 | Cô làm vườn — chatbot chăm sóc hoa | Qwen2.5-Instruct + MiniLM + FAISS top-3 | `POST /api/chat` (SSE), `POST /api/chat/sync` | Hit@1 **1.00**, Hit@3 **1.00** (10 câu, đo trên kho tài liệu cũ — cần đo lại); chất lượng trả lời thực tế **~6–7/10** |
 
 Cách huấn luyện ứng dụng 1: transfer learning, thay lớp `fc` thành 5 đầu ra, AdamW + OneCycleLR, label
 smoothing 0.1, AMP fp16, **chọn checkpoint theo tập validation** và chỉ báo cáo **một lần** trên tập test
@@ -255,7 +255,8 @@ phải có PRO mới tạo được Space Docker. **Static Spaces thì miễn ph
 
 - AI hỗ trợ trong quá trình làm bài: **Kimi Code CLI** (mô hình `deepseek-flash`) — chuyển notebook của
   thầy thành repo chạy được, viết `build_artifacts.py`, `serve.py`, `smoke_test.py`, `tests/`, `Dockerfile`,
-  `netlify.toml`, `deploy_space.py`; tìm và sửa lỗi; chạy kiểm thử và đo độ trễ; viết README/`MODEL_CARD.md`.
+  `netlify.toml`, `deploy_space.py`; tìm và sửa lỗi; chạy kiểm thử và đo độ trễ; viết README/`MODEL_CARD.md`;
+  cá nhân hoá thương hiệu Vườn Hoa AI, chatbot Cô làm vườn và kho tài liệu chăm sóc hoa.
   Kiến trúc, mô hình và code gốc lấy từ notebook của thầy; nhóm chạy, kiểm chứng và chịu trách nhiệm nội dung.
 - Mô hình trong sản phẩm: ResNet-18 (BSD-3-Clause), **YOLO11n (AGPL-3.0 — cần chú ý)**, CLIP (MIT),
   MiniLM (Apache-2.0), Qwen2.5 (Apache-2.0).

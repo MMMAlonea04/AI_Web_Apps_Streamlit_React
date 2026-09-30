@@ -6,10 +6,10 @@ import Search from './features/Search.jsx';
 import Chat from './features/Chat.jsx';
 
 const TABS = [
-  { id: 'classify', label: 'Phân loại ảnh', model: 'classifier', Component: Classify },
-  { id: 'detect', label: 'Phát hiện đối tượng', model: 'detector', Component: Detect },
-  { id: 'search', label: 'Tìm kiếm ảnh', model: 'retrieval', Component: Search },
-  { id: 'chat', label: 'Chatbot RAG', model: 'llm', Component: Chat },
+  { id: 'classify', label: 'Kính lúp hoa', model: 'classifier', Component: Classify },
+  { id: 'detect', label: 'Mắt thần vườn', model: 'detector', Component: Detect },
+  { id: 'search', label: 'Album hoa', model: 'retrieval', Component: Search },
+  { id: 'chat', label: 'Cô làm vườn', model: 'llm', Component: Chat },
 ];
 
 const SOURCE_LABEL = {
@@ -60,7 +60,10 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>AI Web Apps</h1>
+        <div className="brand">
+          <img src="/favicon.svg" alt="" className="logo" />
+          <h1>Vườn Hoa AI</h1>
+        </div>
         <p className="muted">Backend: {status}</p>
         <p className="muted">
           API: {API_BASE || 'cùng origin'}{API_BASE ? ` · ${SOURCE_LABEL[API_SOURCE]}` : ''}

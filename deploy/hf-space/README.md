@@ -1,6 +1,6 @@
 ---
-title: AI Web Apps API
-emoji: 🤖
+title: Vườn Hoa AI API
+emoji: 🌸
 colorFrom: blue
 colorTo: indigo
 sdk: docker
@@ -8,7 +8,7 @@ app_port: 7860
 short_description: FastAPI backend cho 4 ứng dụng AI
 ---
 
-# AI Web Apps — backend
+# Vườn Hoa AI — backend
 
 FastAPI giữ cả 4 mô hình (ResNet-18 phân loại hoa, YOLO11n phát hiện đối tượng, CLIP + FAISS tìm
 kiếm ảnh, Qwen2.5 + MiniLM chatbot RAG), chạy trên CPU. Bản React tĩnh cũng được phục vụ tại `/`.

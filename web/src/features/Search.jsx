@@ -17,10 +17,10 @@ export default function Search() {
 
   return (
     <section>
-      <h2>Tìm kiếm ảnh bằng CLIP</h2>
+      <h2>Album hoa</h2>
       <p className="muted">Kho ảnh: COCO128 + một phần bộ Flowers. Câu mô tả dùng tiếng Anh.</p>
       <form className="row" onSubmit={(e) => { e.preventDefault(); run(postJson('/api/search/text', { query, k: 12 })); }}>
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="a dog on a sofa" aria-label="Câu mô tả" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="a red rose in a garden" aria-label="Câu mô tả" />
         <button className="button" type="submit">Tìm</button>
         <ImagePicker label="…hoặc tìm bằng ảnh" onChange={(f) => run(postImage('/api/search/image', f, { k: 12 }))} />
       </form>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tổng hợp cách làm — AI Web Apps (Streamlit & React)</title>
+<title>Tổng hợp cách làm — Vườn Hoa AI (Streamlit & React)</title>
 <style>:root { --fg:#1f2328; --muted:#59636e; --line:#d1d9e0; --code-bg:#f6f8fa; --link:#0969da; }
 * { box-sizing: border-box; }
 body { margin:0; background:#f6f8fa; color:var(--fg); font:16px/1.65 -apple-system,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif; }
@@ -26,13 +26,13 @@ ul, ol { padding-left:1.5em; }
 </head>
 <body>
 <main>
-<h1>Tổng hợp cách làm — AI Web Apps (Streamlit &amp; React)</h1>
+<h1>Tổng hợp cách làm — Vườn Hoa AI (Streamlit &amp; React)</h1>
 <p>Tài liệu này gom <strong>toàn bộ đường đi</strong> của dự án: dữ liệu lấy ở đâu, 4 ứng dụng dùng mô hình gì và đo
 được bao nhiêu, cách sinh artifacts, cách kiểm thử, cách triển khai công khai, và những lỗi đã gặp cùng
 cách sửa. Số liệu đều là <strong>đo thật</strong> trong <code>artifacts/</code>; chi tiết giới hạn và rủi ro ở
 <a href="../MODEL_CARD.md">MODEL_CARD.md</a>, số thô ở <a href="measurements/">measurements/</a>.</p>
 <p><strong>Sáu câu tóm tắt:</strong> một backend FastAPI giữ 4 mô hình, hai giao diện (Streamlit và React) chỉ gọi HTTP.
-Dữ liệu tự tải bằng script (TF Flowers 3.670 ảnh, COCO128, 6 tài liệu chính sách giả lập). Bốn ứng dụng:
+Dữ liệu tự tải bằng script (TF Flowers 3.670 ảnh, COCO128, 8 tài liệu chăm sóc hoa tiếng Việt). Bốn ứng dụng:
 phân loại hoa (accuracy <strong>0.9510</strong>), phát hiện đối tượng (mAP50 <strong>0.6696</strong>), tìm kiếm ảnh (Precision@5
 <strong>0.8760</strong>), chatbot RAG (Hit@1 <strong>1.00</strong> trên 10 câu). Triển khai: backend chạy trên <strong>Colab T4 +
 Cloudflare Tunnel</strong> (miễn phí, có GPU), giao diện trên <strong>Netlify</strong>, hai bên tự nối với nhau qua một
@@ -109,11 +109,11 @@ lúc khởi động; một mô hình nạp lỗi chỉ khiến <code>/api/health
 <td>Nhãn COCO do chính YOLO gán → 95 nhãn khác nhau. Ảnh nằm trong <code>data/gallery/</code> (đã commit)</td>
 </tr>
 <tr>
-<td><strong>6 tài liệu ShopLite</strong></td>
+<td><strong>8 tài liệu chăm sóc hoa</strong></td>
 <td>Ứng dụng 4 (RAG)</td>
-<td>6 file Markdown</td>
+<td>8 file Markdown</td>
 <td>Có sẵn ở <code>data/kb/</code></td>
-<td>Là <strong>chính sách giả lập</strong>, không phải của doanh nghiệp thật</td>
+<td>Tự biên soạn cho chủ đề hoa: chăm sóc cơ bản, 5 loài hoa, sâu bệnh, hoa theo mùa</td>
 </tr>
 </tbody>
 </table>
@@ -154,10 +154,10 @@ lúc khởi động; một mô hình nạp lỗi chỉ khiến <code>/api/health
 </tr>
 <tr>
 <td>4</td>
-<td>Chatbot chính sách</td>
+<td>Cô làm vườn — chatbot chăm sóc hoa</td>
 <td>Qwen2.5-Instruct + MiniLM + FAISS top-3</td>
 <td><code>POST /api/chat</code> (SSE), <code>POST /api/chat/sync</code></td>
-<td>Hit@1 <strong>1.00</strong>, Hit@3 <strong>1.00</strong> (10 câu); chất lượng trả lời thực tế <strong>~6–7/10</strong></td>
+<td>Hit@1 <strong>1.00</strong>, Hit@3 <strong>1.00</strong> (10 câu, đo trên kho tài liệu cũ — cần đo lại); chất lượng trả lời thực tế <strong>~6–7/10</strong></td>
 </tr>
 </tbody>
 </table>
@@ -535,7 +535,8 @@ gốc còn <strong>xoá <code>LICENSE.txt</code></strong> của TF Flowers. Chi 
 <ul>
 <li>AI hỗ trợ trong quá trình làm bài: <strong>Kimi Code CLI</strong> (mô hình <code>deepseek-flash</code>) — chuyển notebook của
 thầy thành repo chạy được, viết <code>build_artifacts.py</code>, <code>serve.py</code>, <code>smoke_test.py</code>, <code>tests/</code>, <code>Dockerfile</code>,
-<code>netlify.toml</code>, <code>deploy_space.py</code>; tìm và sửa lỗi; chạy kiểm thử và đo độ trễ; viết README/<code>MODEL_CARD.md</code>.
+<code>netlify.toml</code>, <code>deploy_space.py</code>; tìm và sửa lỗi; chạy kiểm thử và đo độ trễ; viết README/<code>MODEL_CARD.md</code>;
+cá nhân hoá thương hiệu Vườn Hoa AI, chatbot Cô làm vườn và kho tài liệu chăm sóc hoa.
 Kiến trúc, mô hình và code gốc lấy từ notebook của thầy; nhóm chạy, kiểm chứng và chịu trách nhiệm nội dung.</li>
 <li>Mô hình trong sản phẩm: ResNet-18 (BSD-3-Clause), <strong>YOLO11n (AGPL-3.0 — cần chú ý)</strong>, CLIP (MIT),
 MiniLM (Apache-2.0), Qwen2.5 (Apache-2.0).</li>

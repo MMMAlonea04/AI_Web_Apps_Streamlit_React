@@ -73,11 +73,11 @@ def main() -> int:
 
     if "llm" in enabled:
         r = requests.post(f"{API}/api/chat/sync",
-                          json={"message": "Phí giao hàng cho đơn 200.000đ là bao nhiêu?"}, timeout=300)
+                          json={"message": "Hoa hồng cần tưới bao nhiêu nước mỗi tuần?"}, timeout=300)
         r.raise_for_status()
         print("chat:", r.json()["answer"][:200])
 
-        with requests.post(f"{API}/api/chat", json={"message": "Bảo hành đồ gia dụng bao lâu?"},
+        with requests.post(f"{API}/api/chat", json={"message": "Sau khi hoa tulip tàn thì phải làm gì?"},
                            stream=True, timeout=300) as s:
             s.encoding = "utf-8"
             events = [json.loads(line[6:]) for line in s.iter_lines(decode_unicode=True) if line.startswith("data: ")]

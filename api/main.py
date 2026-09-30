@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
     MODELS.clear()
 
 
-app = FastAPI(title="AI Web Apps API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Vườn Hoa AI API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
 

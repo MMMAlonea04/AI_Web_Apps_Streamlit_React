@@ -100,7 +100,7 @@ def upload(repo_id: str, private: bool) -> None:
         repo_id=repo_id,
         repo_type="space",
         folder_path=STAGE,
-        commit_message="Deploy backend AI Web Apps từ GitHub MMMAlonea04/AI_Web_Apps_Streamlit_React",
+        commit_message="Deploy backend Vườn Hoa AI từ GitHub MMMAlonea04/AI_Web_Apps_Streamlit_React",
     )
     print("✅ Đã đẩy lên", f"https://huggingface.co/spaces/{repo_id}", flush=True)
 

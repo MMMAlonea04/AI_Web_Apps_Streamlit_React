@@ -1,4 +1,4 @@
-# Model Card — AI Web Apps
+# Model Card — Vườn Hoa AI
 
 Phiên bản `v1.0` · Cập nhật 2026-09-29 · Nhóm thực hiện: `<tên các thành viên>`
 
@@ -70,8 +70,9 @@ bằng `python scripts/build_artifacts.py all`. Số thô ở [docs/measurements
 
 ## 4. Qwen2.5-Instruct + MiniLM + FAISS — Chatbot RAG
 
-- **Mục đích:** trả lời câu hỏi về chính sách cửa hàng, **chỉ dựa trên tài liệu** và ghi nguồn.
-- **Dữ liệu:** 6 tài liệu Markdown **giả lập** của "ShopLite" trong `data/kb/`. Chunk theo tiêu đề `##`, tối đa 600 ký tự. Embedding đa ngữ MiniLM + FAISS top-3.
+- **Mục đích:** trả lời câu hỏi về cách chăm sóc hoa, **chỉ dựa trên tài liệu** và ghi nguồn.
+- **Dữ liệu:** 8 tài liệu Markdown **tự biên soạn** về chăm sóc hoa trong `data/kb/` (chăm sóc cơ bản, hoa hồng, hướng dương, tulip, hoa cúc, bồ công anh, sâu bệnh, hoa theo mùa). Chunk theo tiêu đề `##`, tối đa 600 ký tự. Embedding đa ngữ MiniLM + FAISS top-3.
+- **Lưu ý:** các quan sát hành vi và chỉ số Hit@k dưới đây đo trên kho tài liệu cũ (chính sách ShopLite) — sau khi đổi kho sang tài liệu chăm sóc hoa cần đo lại bằng `python scripts/build_artifacts.py rag`.
 - **Chỉ số:** Hit@1, Hit@3 trên 10 câu hỏi kiểm thử (`scripts/build_artifacts.py::EVAL_QA`) — mẫu quá nhỏ để coi là kết luận chắc chắn.
 - **Giới hạn:** tài liệu không phải chính sách thật của doanh nghiệp nào. Bản `Qwen2.5-0.5B-Instruct` trên CPU yếu rõ rệt so với 1.5B trên GPU — cùng một câu hỏi có thể ra câu trả lời khác nhau. Truy xuất sai đoạn thì câu trả lời sai dù LLM không bịa.
 - **Hành vi đo được** (API công khai, Colab T4, Qwen2.5-1.5B-Instruct, 10 câu hỏi chuẩn):

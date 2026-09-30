@@ -1,4 +1,4 @@
-# AI Web Apps — Streamlit & React
+# Vườn Hoa AI — Streamlit & React
 
 📊 **[Slide về cách làm — bản 1 trang](docs/slide-cach-lam.pptx)** (bản nộp chính) &nbsp;·&nbsp; **[bản 5 trang](docs/slide-cach-lam-5-trang.pptx)** &nbsp;·&nbsp; 📝 **[Tổng hợp cách làm](docs/cach-lam-tong-hop.md)** &nbsp;·&nbsp; 📷 **[Ảnh giao diện](#ảnh-giao-diện)** &nbsp;·&nbsp; 📄 **[Model card](MODEL_CARD.md)**
 
@@ -9,7 +9,7 @@ Bốn ứng dụng AI sau **một** backend FastAPI, với hai giao diện web (
 | 1 | Nhận diện loài hoa | ResNet-18 fine-tune | TF Flowers — 3.670 ảnh, 5 lớp | Accuracy, macro-F1, ma trận nhầm lẫn |
 | 2 | Phát hiện đối tượng | YOLO11n (COCO, 80 lớp) | COCO128 — 128 ảnh có nhãn | mAP50, mAP50-95 |
 | 3 | Tìm kiếm ảnh | CLIP ViT-B/32 + FAISS | COCO128 + 100 ảnh/loài hoa | Precision@5, Precision@10 |
-| 4 | Trợ lý khách hàng | Qwen2.5-Instruct + MiniLM + FAISS (RAG) | 6 tài liệu chính sách ShopLite | Hit@1, Hit@3 |
+| 4 | Cô làm vườn (chatbot RAG) | Qwen2.5-Instruct + MiniLM + FAISS (RAG) | 8 tài liệu chăm sóc hoa (tiếng Việt) | Hit@1, Hit@3 |
 
 ```
 Trình duyệt ──► Streamlit (8501) ─┐
@@ -424,7 +424,7 @@ Bài tập cho phép dùng AI nhưng yêu cầu ghi rõ công cụ và phiên b�
 
 | Công cụ | Phiên bản / mô hình | Dùng vào việc gì |
 |---|---|---|
-| **Kimi Code CLI** (Moonshot AI) | mô hình `deepseek-flash` | Trích code từ notebook của thầy thành repo chạy được; viết `scripts/build_artifacts.py`, `scripts/serve.py`, `scripts/smoke_test.py`, `tests/`, `.gitignore`, `.gitattributes`, `Dockerfile`; tìm và sửa lỗi; chạy kiểm thử API và đo độ trễ; viết README và `MODEL_CARD.md` |
+| **Kimi Code CLI** (Moonshot AI) | mô hình `deepseek-flash` | Trích code từ notebook của thầy thành repo chạy được; viết `scripts/build_artifacts.py`, `scripts/serve.py`, `scripts/smoke_test.py`, `tests/`, `.gitignore`, `.gitattributes`, `Dockerfile`; tìm và sửa lỗi; chạy kiểm thử API và đo độ trễ; viết README và `MODEL_CARD.md`; cá nhân hoá thương hiệu "Vườn Hoa AI" (tên, favicon, tên 4 tính năng) và chatbot "Cô làm vườn" kèm kho tài liệu chăm sóc hoa |
 | `<công cụ khác nếu có>` | `<version>` | `<dùng làm gì>` |
 
 Phần nào của nhóm, phần nào của AI: kiến trúc, mô hình và code gốc lấy từ notebook của thầy.
