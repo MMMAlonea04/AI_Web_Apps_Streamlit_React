@@ -1,32 +1,45 @@
 // Mọi lời gọi backend nằm ở đây. Địa chỉ backend xác định LÚC CHẠY, theo thứ tự ưu tiên:
-// ?api=<địa chỉ> → window.API_URL → gist công bố (VITE_API_DISCOVERY) → localStorage
-// → VITE_API_URL (lúc build) → rỗng = cùng origin.
+// ?api=<địa chỉ> → window.API_URL → gist công bố → localStorage → VITE_API_URL (lúc build) → cùng origin.
+// Nguồn gist lấy từ ?discovery=<url gist> (nhớ cho lần sau) → localStorage → VITE_API_DISCOVERY (lúc build).
 const STORAGE_KEY = 'api_base';
+const DISCOVERY_KEY = 'api_discovery';
 const DISCOVERY_TIMEOUT_MS = 4000;
 
 export let API_BASE = '';
+export let API_SOURCE = '';
 
-const clean = (base) => String(base ?? '').trim().replace(/\/+$/, '');
+const clean = (value) => String(value ?? '').trim().replace(/\/+$/, '');
 
-function remember(base) {
-  try { localStorage.setItem(STORAGE_KEY, base); } catch { /* chế độ riêng tư: bỏ qua */ }
+function stored(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
 }
 
-function stored() {
-  try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+function remember(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* chế độ riêng tư: bỏ qua */ }
+}
+
+function discoveryEndpoint() {
+  const asked = clean(new URLSearchParams(window.location.search).get('discovery'));
+  if (asked) {
+    remember(DISCOVERY_KEY, asked);
+    return asked;
+  }
+  return clean(stored(DISCOVERY_KEY)) || clean(import.meta.env.VITE_API_DISCOVERY);
 }
 
 // Gist công bố của phiên Colab đang chạy, do scripts/serve.py cập nhật:
 // {"files": {"api.json": {"content": "{\"api\": \"https://…\"}"}}}
 async function discovered() {
-  const endpoint = import.meta.env.VITE_API_DISCOVERY;
+  const endpoint = discoveryEndpoint();
   if (!endpoint) return null;
   try {
     const res = await fetch(endpoint, { cache: 'no-store', signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS) });
     if (!res.ok) return null;
     const body = await res.json();
-    const content = body?.files?.['api.json']?.content ?? body?.content;
-    const api = content ? JSON.parse(content).api : body?.api;
+    const files = Object.values(body?.files ?? {});
+    const chosen = body?.files?.['api.json'] ?? files.find((f) => /\.json$/i.test(f?.filename ?? '')) ?? files[0];
+    const text = chosen?.content ?? body?.content;
+    const api = text ? JSON.parse(text).api : body?.api;
     return api || null;
   } catch {
     return null;
@@ -34,16 +47,29 @@ async function discovered() {
 }
 
 export async function resolveApiBase() {
-  const asked = clean(new URLSearchParams(window.location.search).get('api'));
-  if (asked) {
-    remember(asked);
-    API_BASE = asked;
-    return API_BASE;
-  }
-  const found = clean(window.API_URL) || await discovered() || clean(stored()) || clean(import.meta.env.VITE_API_URL);
-  if (found) remember(found);
-  API_BASE = found;
-  return API_BASE;
+  const wanted = new URLSearchParams(window.location.search);
+
+  const asked = clean(wanted.get('api'));
+  if (asked) return useBase('query', asked);
+
+  const explicit = clean(window.API_URL);
+  if (explicit) return useBase('window', explicit);
+
+  const fromGist = clean(await discovered());
+  if (fromGist) return useBase('gist', fromGist);
+
+  const cached = clean(stored(STORAGE_KEY));
+  if (cached) return useBase('storage', cached);
+
+  const built = clean(import.meta.env.VITE_API_URL);
+  return useBase(built ? 'build' : 'origin', built);
+}
+
+function useBase(source, base) {
+  API_SOURCE = source;
+  API_BASE = base;
+  if (base) remember(STORAGE_KEY, base);
+  return base;
 }
 
 async function handle(res) {
