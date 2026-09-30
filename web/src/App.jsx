@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getHealth } from './api.js';
+import { API_BASE, getHealth } from './api.js';
 import Classify from './features/Classify.jsx';
 import Detect from './features/Detect.jsx';
 import Search from './features/Search.jsx';
@@ -12,7 +12,7 @@ const TABS = [
   { id: 'chat', label: 'Chatbot RAG', model: 'llm', Component: Chat },
 ];
 
-// Space free của Hugging Face ngủ sau 48h không dùng và cold start mất 1–3 phút, nên phải hỏi lại.
+// Backend có thể là link tunnel Colab vừa khởi động (nạp mô hình mất 1–3 phút) nên phải hỏi lại.
 const RETRY_MS = 3000;
 const MAX_TRIES = 20;
 
@@ -53,6 +53,7 @@ export default function App() {
       <header>
         <h1>AI Web Apps</h1>
         <p className="muted">Backend: {status}</p>
+        <p className="muted">API: {API_BASE || 'cùng origin'}</p>
       </header>
       <nav className="tabs" role="tablist">
         {TABS.map((t) => (
@@ -64,7 +65,11 @@ export default function App() {
       </nav>
       <main>
         {health?.status === 'down' && (
-          <p className="error">Không gọi được backend — kiểm tra VITE_API_URL của bản React và CORS_ORIGINS của API.</p>
+          <p className="error">
+            Không gọi được backend. Mở lại trang kèm địa chỉ backend, ví dụ{' '}
+            <code>?api=https://abc-def.trycloudflare.com</code> — địa chỉ sẽ được ghi nhớ cho lần sau.
+            Nếu backend đã chạy mà vẫn lỗi, kiểm <code>CORS_ORIGINS</code> phía API.
+          </p>
         )}
         {online && !ready && <p className="error">Mô hình “{current.model}” chưa được nạp ở backend.</p>}
         <current.Component />

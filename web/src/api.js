@@ -1,5 +1,17 @@
-// Mọi lời gọi backend nằm ở đây. API_BASE rỗng = cùng origin (FastAPI phục vụ bản build).
-export const API_BASE = import.meta.env.VITE_API_URL ?? '';
+// Mọi lời gọi backend nằm ở đây. Địa chỉ backend xác định lúc chạy, theo thứ tự ưu tiên:
+// ?api=<địa chỉ> (lưu lại cho lần sau) → window.API_URL → VITE_API_URL (lúc build) → rỗng = cùng origin.
+const STORAGE_KEY = 'api_base';
+
+function runtimeApi() {
+  const asked = new URLSearchParams(window.location.search).get('api');
+  if (asked) {
+    try { localStorage.setItem(STORAGE_KEY, asked); } catch { /* chế độ riêng tư: bỏ qua */ }
+    return asked;
+  }
+  try { return localStorage.getItem(STORAGE_KEY) ?? window.API_URL ?? null; } catch { return window.API_URL ?? null; }
+}
+
+export const API_BASE = (runtimeApi() ?? import.meta.env.VITE_API_URL ?? '').trim().replace(/\/+$/, '');
 
 async function handle(res) {
   if (!res.ok) {

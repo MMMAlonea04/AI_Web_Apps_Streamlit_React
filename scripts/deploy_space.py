@@ -4,6 +4,9 @@
     python scripts/deploy_space.py --repo <user>/ai-web-apps --dry-run
     python scripts/deploy_space.py --repo <user>/ai-web-apps
 
+Từ 2026 Hugging Face yêu cầu gói PRO để tạo Space chạy compute (Docker/Gradio); script này để dành cho
+khi có PRO, còn đường miễn phí là Colab + Cloudflare Tunnel (xem README mục 6.1).
+
 Chỉ file Space cần được đưa lên `dist/space/`, nên README dự án không bị thay bằng thẻ Space
 (`deploy/hf-space/README.md` được copy thành `README.md` của Space). Trọng số CLIP, MiniLM và
 Qwen do container tải lúc khởi động, không nằm trong image.
