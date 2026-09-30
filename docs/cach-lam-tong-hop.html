@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tổng hợp cách làm — AI Web Apps (Streamlit & React)</title>
+<style>:root { --fg:#1f2328; --muted:#59636e; --line:#d1d9e0; --code-bg:#f6f8fa; --link:#0969da; }
+* { box-sizing: border-box; }
+body { margin:0; background:#f6f8fa; color:var(--fg); font:16px/1.65 -apple-system,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif; }
+main { max-width:940px; margin:0 auto; padding:36px 28px 72px; background:#fff; }
+h1 { font-size:1.9em; border-bottom:1px solid var(--line); padding-bottom:.3em; }
+h2 { font-size:1.4em; margin-top:1.9em; border-bottom:1px solid var(--line); padding-bottom:.2em; }
+h3, h4 { font-size:1.12em; margin-top:1.5em; }
+a { color:var(--link); }
+code { background:var(--code-bg); padding:.15em .35em; border-radius:5px; font-size:.9em; font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; }
+pre { background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; width:100%; margin:1.1em 0; font-size:.95em; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+th { background:#f0f3f6; white-space:nowrap; }
+tbody tr:nth-child(even) { background:#fafbfc; }
+blockquote { margin:1.1em 0; padding:2px 16px; border-left:4px solid var(--line); color:var(--muted); }
+hr { border:0; border-top:1px solid var(--line); margin:2.2em 0; }
+ul, ol { padding-left:1.5em; }
+@media print { body { background:#fff; } main { max-width:none; padding:0; } table { display:table; font-size:.85em; } pre { white-space:pre-wrap; } }</style>
+</head>
+<body>
+<main>
+<h1>Tổng hợp cách làm — AI Web Apps (Streamlit &amp; React)</h1>
+<p>Tài liệu này gom <strong>toàn bộ đường đi</strong> của dự án: dữ liệu lấy ở đâu, 4 ứng dụng dùng mô hình gì và đo
+được bao nhiêu, cách sinh artifacts, cách kiểm thử, cách triển khai công khai, và những lỗi đã gặp cùng
+cách sửa. Số liệu đều là <strong>đo thật</strong> trong <code>artifacts/</code>; chi tiết giới hạn và rủi ro ở
+<a href="../MODEL_CARD.md">MODEL_CARD.md</a>, số thô ở <a href="measurements/">measurements/</a>.</p>
+<p><strong>Sáu câu tóm tắt:</strong> một backend FastAPI giữ 4 mô hình, hai giao diện (Streamlit và React) chỉ gọi HTTP.
+Dữ liệu tự tải bằng script (TF Flowers 3.670 ảnh, COCO128, 6 tài liệu chính sách giả lập). Bốn ứng dụng:
+phân loại hoa (accuracy <strong>0.9510</strong>), phát hiện đối tượng (mAP50 <strong>0.6696</strong>), tìm kiếm ảnh (Precision@5
+<strong>0.8760</strong>), chatbot RAG (Hit@1 <strong>1.00</strong> trên 10 câu). Triển khai: backend chạy trên <strong>Colab T4 +
+Cloudflare Tunnel</strong> (miễn phí, có GPU), giao diện trên <strong>Netlify</strong>, hai bên tự nối với nhau qua một
+<strong>gist công bố</strong> để không phải sửa gì khi link tunnel đổi mỗi phiên.</p>
+<h2>1. Kiến trúc</h2>
+<pre><code>Trình duyệt ──► Streamlit (8501) ─┐
+                                  ├──► FastAPI (8000/7860) ──► core/ (4 mô hình, nạp 1 lần)
+Trình duyệt ──► React (web/dist) ─┘
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Tầng</th>
+<th>Thư mục</th>
+<th>Trách nhiệm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Suy luận</td>
+<td><code>core/</code></td>
+<td>Chỉ 4 lớp mô hình: <code>ImageClassifier</code>, <code>ObjectDetector</code>, <code>ImageSearch</code>, <code>RAGChatbot</code></td>
+</tr>
+<tr>
+<td>HTTP</td>
+<td><code>api/</code></td>
+<td>Bọc thành endpoint, kiểm ảnh tải lên, đo <code>X-Process-Time-ms</code>, CORS</td>
+</tr>
+<tr>
+<td>Giao diện</td>
+<td><code>streamlit_app.py</code>, <code>web/</code></td>
+<td>Chỉ gọi API, không chứa mô hình</td>
+</tr>
+<tr>
+<td>Cấu hình</td>
+<td><code>config.py</code></td>
+<td>Mọi giá trị đổi được bằng biến môi trường (đổi model không phải sửa code)</td>
+</tr>
+</tbody>
+</table>
+<p>Điểm cốt lõi: <strong>đổi mô hình = đổi biến môi trường</strong>, giao diện không phải sửa. Cả 4 mô hình nạp một lần
+lúc khởi động; một mô hình nạp lỗi chỉ khiến <code>/api/health</code> báo <code>false</code> chứ không làm sập server.</p>
+<h2>2. Dữ liệu dùng ở đâu</h2>
+<table>
+<thead>
+<tr>
+<th>Bộ dữ liệu</th>
+<th>Dùng cho</th>
+<th>Quy mô</th>
+<th>Cách có được</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TF Flowers</strong></td>
+<td>Ứng dụng 1 (huấn luyện)</td>
+<td>3.670 ảnh / 5 lớp (daisy, dandelion, roses, sunflowers, tulips)</td>
+<td><code>python scripts/build_artifacts.py data</code> (tự tải)</td>
+<td>Chia phân tầng 80/10/10 = 2.936 / 367 / 367, cố định <code>SEED=42</code>, lưu ở <code>artifacts/classifier/split.json</code>. Tăng cường chỉ áp cho tập train</td>
+</tr>
+<tr>
+<td><strong>COCO128</strong></td>
+<td>Ứng dụng 2 (đánh giá) + kho ảnh của ứng dụng 3</td>
+<td>128 ảnh, 929 đối tượng</td>
+<td>như trên</td>
+<td>Ảnh này nằm trong tập COCO mà YOLO đã học → mAP đo được <strong>lạc quan hơn thực tế</strong></td>
+</tr>
+<tr>
+<td><strong>Kho ảnh gallery</strong></td>
+<td>Ứng dụng 3 (truy vấn)</td>
+<td><strong>628 ảnh</strong> = 128 COCO128 + 100 × 5 loài hoa</td>
+<td>Sinh ở stage <code>retrieval</code></td>
+<td>Nhãn COCO do chính YOLO gán → 95 nhãn khác nhau. Ảnh nằm trong <code>data/gallery/</code> (đã commit)</td>
+</tr>
+<tr>
+<td><strong>6 tài liệu ShopLite</strong></td>
+<td>Ứng dụng 4 (RAG)</td>
+<td>6 file Markdown</td>
+<td>Có sẵn ở <code>data/kb/</code></td>
+<td>Là <strong>chính sách giả lập</strong>, không phải của doanh nghiệp thật</td>
+</tr>
+</tbody>
+</table>
+<p>Dữ liệu thô (<code>data/flowers/</code>, <code>data/coco128/</code>) <strong>không commit</strong> — bị chặn trong <code>.gitignore</code> vì tải lại
+được bằng script; chỉ <code>data/kb/</code> và <code>data/gallery/</code> (39 MB) nằm trong repo để bản Docker chạy được ngay.</p>
+<h2>3. Bốn ứng dụng và số đo thật</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Ứng dụng</th>
+<th>Mô hình</th>
+<th>Endpoint</th>
+<th>Chỉ số đo thật</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Nhận diện loài hoa</td>
+<td>ResNet-18 fine-tune từ ImageNet</td>
+<td><code>POST /api/classify</code></td>
+<td>test accuracy <strong>0.9510</strong>, macro-F1 <strong>0.9509</strong> (367 ảnh test)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Phát hiện đối tượng</td>
+<td>YOLO11n (COCO, 80 lớp, không huấn luyện lại)</td>
+<td><code>POST /api/detect</code></td>
+<td>mAP50 <strong>0.6696</strong>, mAP50-95 <strong>0.5024</strong> (128 ảnh COCO128)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Tìm kiếm ảnh</td>
+<td>CLIP ViT-B/32 + FAISS <code>IndexFlatIP</code></td>
+<td><code>POST /api/search/text</code>, <code>/api/search/image</code>, <code>GET /api/gallery/{id}</code></td>
+<td>ảnh→ảnh Precision@5 <strong>0.8760</strong> (50 truy vấn); chữ→ảnh Precision@10 <strong>1.00</strong> (5 truy vấn, bài đo dễ)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Chatbot chính sách</td>
+<td>Qwen2.5-Instruct + MiniLM + FAISS top-3</td>
+<td><code>POST /api/chat</code> (SSE), <code>POST /api/chat/sync</code></td>
+<td>Hit@1 <strong>1.00</strong>, Hit@3 <strong>1.00</strong> (10 câu); chất lượng trả lời thực tế <strong>~6–7/10</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Cách huấn luyện ứng dụng 1: transfer learning, thay lớp <code>fc</code> thành 5 đầu ra, AdamW + OneCycleLR, label
+smoothing 0.1, AMP fp16, <strong>chọn checkpoint theo tập validation</strong> và chỉ báo cáo <strong>một lần</strong> trên tập test
+(lịch sử 5 epoch ghi trong <code>artifacts/classifier/metrics.json</code>).</p>
+<p>Hai con số &quot;đẹp&quot; cần đọc cho đúng: Precision@10 = 1.00 là bài đo dễ (câu <code>&quot;a photo of daisy&quot;</code> gần như
+trùng cách gán nhãn kho ảnh), và Hit@1 = 1.00 chỉ trên 10 câu — mẫu quá nhỏ. Con số đáng tin nhất là
+<strong>accuracy 0.9510 trên 367 ảnh test tách hẳn khỏi train</strong>.</p>
+<h2>4. Sinh artifacts (5 stage)</h2>
+<p><code>scripts/build_artifacts.py</code> gom các cell rời của notebook thành 5 stage chạy theo thứ tự cố định:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Việc</th>
+<th>Kết quả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td>Tải TF Flowers, COCO128 + biểu đồ EDA</td>
+<td><code>data/flowers/</code>, <code>data/coco128/</code>, <code>artifacts/figures/01_du_lieu.png</code></td>
+</tr>
+<tr>
+<td><code>classifier</code></td>
+<td>Fine-tune ResNet-18, chọn checkpoint theo val, đánh giá 1 lần trên test</td>
+<td><code>artifacts/classifier/{model.pt,classes.json,split.json,metrics.json}</code></td>
+</tr>
+<tr>
+<td><code>detector</code></td>
+<td>Tải YOLO11n, chạy ảnh mẫu, eval trên COCO128</td>
+<td><code>artifacts/detector/{yolo11n.pt,metrics.json}</code></td>
+</tr>
+<tr>
+<td><code>retrieval</code></td>
+<td>Gắn nhãn COCO bằng YOLO, dựng gallery, encode CLIP, build FAISS, đo Precision</td>
+<td><code>data/gallery/</code>, <code>artifacts/retrieval/{index.faiss,meta.json,metrics.json}</code></td>
+</tr>
+<tr>
+<td><code>rag</code></td>
+<td>Chunk tài liệu, embedding MiniLM, eval Hit@k, nạp LLM hỏi thử</td>
+<td><code>artifacts/{rag_metrics.json,rag_probe.json}</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-bash">python scripts/build_artifacts.py all                       # ~15–25 phút trên Colab T4, 1–2 giờ trên CPU
+python scripts/build_artifacts.py classifier --epochs 5 --batch-size 64
+</code></pre>
+<p>Chạy CPU vẫn ra đủ 4 bộ artifacts nhưng <strong>số không dùng để nộp</strong>: classifier tự giảm còn 1 epoch / 800 ảnh
+(train ~0.68 thay vì ~0.95) và LLM chuyển sang <code>Qwen2.5-0.5B-Instruct</code>, bản 0.5B kém hơn hẳn về an toàn
+(đã đo: cùng câu injection xin OTP, 1.5B từ chối còn 0.5B trả lời đưa mã). Batch size tự giảm còn 16 nếu
+VRAM &lt; 6 GB nên không bị <code>CUDA out of memory</code>.</p>
+<h2>5. Chạy trên máy và trên Colab</h2>
+<pre><code class="language-bash"># trên máy
+py -3 -m venv .venv &amp;&amp; .venv\Scripts\activate
+pip install -r requirements.txt -r requirements-dev.txt
+python scripts/serve.py api          # http://localhost:8000/docs
+python scripts/serve.py streamlit    # http://localhost:8501
+cd web &amp;&amp; npm install &amp;&amp; npm run build &amp;&amp; python scripts/serve.py web
+</code></pre>
+<pre><code class="language-python"># trên Colab (Runtime → T4 GPU trước)
+!git clone -b develop https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/ai_web_apps
+%cd /content/ai_web_apps
+!pip install -q -r requirements-colab.txt     # không cài lại torch vì Colab đã có bản khớp CUDA
+!python scripts/serve.py all                  # build React → API → Streamlit → tunnel
+</code></pre>
+<p><code>serve.py all</code> tự cài Node 22 nếu Node của Colab quá cũ cho Vite 8 (cần ≥ 20.19 / ≥ 22.12). Biến môi
+trường quan trọng: <code>ENABLED_MODELS</code>, <code>LLM_MODEL</code>, <code>CORS_ORIGINS</code>, <code>RAG_MIN_SCORE</code>, <code>MAX_UPLOAD_MB</code> — bảng
+đầy đủ ở <a href="../README.md">README mục 7</a>.</p>
+<h2>6. Kiểm thử và đo</h2>
+<pre><code class="language-bash">python -m pytest                     # 7 test API bằng mô hình giả, ~2 giây, không cần GPU/artifacts
+python scripts/smoke_test.py         # kiểm thật (cần artifacts + API đang chạy)
+API_URL=https://&lt;link-tunnel&gt; python scripts/smoke_test.py    # kiểm luôn bản đã triển khai
+</code></pre>
+<p><code>smoke_test.py</code> đi hết 8 ca: health, classify, detect, search bằng chữ, search bằng ảnh, ảnh gallery trả
+<code>image/*</code>, chat thường + chat SSE, và các ca lỗi phải đúng mã 400 / 413 / 404 / 422. Script lấy ảnh mẫu từ
+<code>data/gallery</code> khi chưa tải bộ Flowers, nên chạy được cả với backend ở xa.</p>
+<p>Độ trễ đo trên Colab T4 (gọi qua Cloudflare Tunnel, header <code>X-Process-Time-ms</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Server p50</th>
+<th>Server p95</th>
+<th>Vòng-trip p50</th>
+<th>Vòng-trip p95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/classify</code></td>
+<td>39 ms</td>
+<td>71 ms</td>
+<td>559 ms</td>
+<td>850 ms</td>
+</tr>
+<tr>
+<td><code>/api/detect</code></td>
+<td>65 ms</td>
+<td>88 ms</td>
+<td>3802 ms</td>
+<td>3887 ms</td>
+</tr>
+<tr>
+<td><code>/api/search/text</code></td>
+<td>20 ms</td>
+<td>37 ms</td>
+<td>585 ms</td>
+<td>680 ms</td>
+</tr>
+<tr>
+<td><code>/api/search/image</code></td>
+<td>44 ms</td>
+<td>66 ms</td>
+<td>605 ms</td>
+<td>697 ms</td>
+</tr>
+<tr>
+<td><code>/api/chat/sync</code></td>
+<td>3105 ms</td>
+<td>4728 ms</td>
+<td>3527 ms</td>
+<td>5161 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Bài học từ số đo: <code>/api/detect</code> trả ảnh base64 ~368 KB nên vòng-trip chậm hơn server <strong>~60 lần</strong> — nút cổ
+chai là <strong>truyền ảnh</strong>, không phải mô hình. Và lần gọi đầu tiên của mỗi mô hình chậm hơn hẳn lần sau
+(classify 1.060 ms ở lần đầu so với 34 ms khi đã nóng) — khi báo cáo độ trễ nên ghi rõ &quot;đã warm-up&quot;.</p>
+<h2>7. Triển khai công khai</h2>
+<h3>7.1 Hai bản chạy công khai</h3>
+<table>
+<thead>
+<tr>
+<th>Thành phần</th>
+<th>Nơi chạy</th>
+<th>Địa chỉ</th>
+<th>Sống khi nào</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backend FastAPI + 4 mô hình</td>
+<td>Colab T4 + Cloudflare Tunnel</td>
+<td><code>https://&lt;tên-ngẫu-nhiên&gt;.trycloudflare.com</code></td>
+<td>chỉ khi phiên Colab còn chạy</td>
+</tr>
+<tr>
+<td>Giao diện React</td>
+<td>Netlify</td>
+<td><code>https://ai-web-aapp.netlify.app</code></td>
+<td>luôn (file tĩnh)</td>
+</tr>
+</tbody>
+</table>
+<p>Vì link tunnel đổi mỗi phiên, chính link tunnel cũng phục vụ luôn bản React đã build → cách gọn nhất để
+có <em>một</em> link là mở thẳng link tunnel (cùng origin, không cần CORS).</p>
+<h3>7.2 Vấn đề trung tâm: frontend ở origin cố định, backend đổi địa chỉ</h3>
+<p><code>VITE_API_URL</code> là biến <strong>build-time</strong>, nên nếu ghim cứng thì mỗi phiên phải build lại giao diện. Cách giải
+quyết đã chọn — <strong>đọc địa chỉ API lúc chạy</strong>, theo thứ tự ưu tiên (<code>web/src/api.js</code>):</p>
+<pre><code>?api=&lt;địa chỉ&gt;  →  window.API_URL  →  gist công bố  →  localStorage  →  VITE_API_URL (lúc build)  →  cùng origin
+</code></pre>
+<p>Trong đó &quot;gist công bố&quot; là một <strong>gist công khai</strong> chứa <code>{&quot;api&quot;: &quot;&lt;link tunnel hiện tại&gt;&quot;}</code>, và <code>serve.py</code>
+tự cập nhật gist đó sau mỗi lần mở tunnel (<code>scripts/colab_utils.py::publish_api_url</code>). Kết quả: mỗi phiên
+chỉ cần chạy <code>serve.py all</code>, mở Netlify là vào thẳng, không phải dán gì.</p>
+<p>Muốn tự dựng lại cơ chế này:</p>
+<ol>
+<li>Tạo <strong>public gist</strong> với file <code>api.json</code> nội dung <code>{&quot;api&quot;: &quot;&quot;}</code> → lấy ID ở cuối URL.</li>
+<li>Tạo GitHub token <strong>có quyền ghi gist</strong> (classic: scope <code>gist</code>; fine-grained: <em>User permissions →
+Gists → Read and write</em>). <strong>Token phải thuộc đúng tài khoản sở hữu gist</strong> — PAT chỉ sửa được gist của chính nó.</li>
+<li>Đặt vào Colab Secrets: <code>GH_TOKEN</code>, <code>GIST_ID</code> (bật <em>Notebook access</em> cho cả hai).</li>
+<li>Frontend trỏ vào gist: <code>VITE_API_DISCOVERY=https://api.github.com/gists/&lt;id&gt;</code> lúc build, <strong>hoặc</strong> mở
+một lần <code>https://&lt;tên-site&gt;.netlify.app/?discovery=https://api.github.com/gists/&lt;id&gt;</code> (được ghi nhớ).</li>
+</ol>
+<p>Cell Colab chuẩn cho mỗi phiên — chú ý phải đẩy secret ra biến môi trường <strong>trước</strong> khi chạy:</p>
+<pre><code class="language-python">import os
+from google.colab import userdata
+os.environ[&quot;GH_TOKEN&quot;] = userdata.get(&quot;GH_TOKEN&quot;)     # !python là tiến trình con, không đọc được userdata
+os.environ[&quot;GIST_ID&quot;] = userdata.get(&quot;GIST_ID&quot;)
+os.environ[&quot;CORS_ORIGINS&quot;] = &quot;https://ai-web-aapp.netlify.app&quot;
+!python scripts/serve.py all                          # log sẽ in: 📣 Đã công bố địa chỉ backend: …
+</code></pre>
+<h3>7.3 CORS</h3>
+<p><code>config.py</code> mặc định chỉ cho <code>localhost</code>. Khi deploy phải đặt <code>CORS_ORIGINS</code> <strong>trước khi</strong> khởi động API
+(API đọc biến này lúc chạy), đúng origin và <strong>không có dấu <code>/</code> ở cuối</strong> — trình duyệt gửi Origin không có
+dấu <code>/</code>, thêm vào là không bao giờ khớp và preflight trả 400.</p>
+<h3>7.4 Giao diện React lên Netlify</h3>
+<p><code>netlify.toml</code> khai base <code>web</code>, <code>npm run build</code>, publish <code>dist</code>, <code>NODE_VERSION=22</code>. Hai cách đưa lên:</p>
+<ul>
+<li><strong>Nối repo GitHub</strong> (khuyến nghị): Netlify tự build mỗi lần push, biến môi trường đặt một lần trong UI.</li>
+<li><strong>Kéo-thả</strong> <code>web/dist</code>: Netlify không có chỗ sửa file, nên biến build-time phải có <strong>lúc build tại máy</strong>
+(<code>web/.env</code> theo mẫu <code>web/.env.example</code>, hoặc <code>VITE_API_DISCOVERY=… npm run build</code>). Đừng dùng trang
+<code>app.netlify.com/drop</code> cho site đã có vì nó tạo <strong>site mới → tên miền mới → CORS lệch</strong>; hãy vào site cũ
+→ tab <strong>Deploys</strong> → kéo thả.</li>
+</ul>
+<h3>7.5 Hugging Face Spaces và các phương án khác</h3>
+<p>Từ 2026, Hugging Face <strong>chỉ cho tài khoản trả phí tạo Space chạy compute</strong> (Gradio/Docker) — <em>&quot;require a
+paid plan to create: PRO for personal accounts&quot;</em>; hardware <code>CPU Basic</code> (2 vCPU/16 GB) vẫn miễn phí nhưng
+phải có PRO mới tạo được Space Docker. <strong>Static Spaces thì miễn phí cho mọi người</strong>, kể cả có bước build
+(<code>sdk: static</code> + <code>app_build_command: npm run build</code> + <code>app_file: dist/index.html</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Phương án</th>
+<th>Phù hợp</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Colab + Cloudflare Tunnel</strong> (đang dùng)</td>
+<td>demo, bảo vệ</td>
+<td>0đ, có GPU T4 nên chatbot dùng Qwen 1.5B; link chết khi hết phiên</td>
+</tr>
+<tr>
+<td><strong>Hugging Face Spaces PRO</strong></td>
+<td>API + React, một link 24/7</td>
+<td>$9/tháng, huỷ được; <code>Dockerfile</code> + <code>scripts/deploy_space.py</code> đã viết sẵn cho đường này</td>
+</tr>
+<tr>
+<td><strong>HF Static Space</strong></td>
+<td>chỉ React</td>
+<td>0đ, cùng tài khoản HF</td>
+</tr>
+<tr>
+<td><strong>Google Cloud Run</strong></td>
+<td>API container 24/7</td>
+<td>free tier 180.000 vCPU-giây + 360.000 GiB-giây/tháng ≈ 25 giờ xử lý với 2 vCPU/4 GiB; cần thẻ</td>
+</tr>
+<tr>
+<td><strong>Render / Koyeb / Fly.io</strong></td>
+<td>API container</td>
+<td>RAM free thường 512 MB–1 GB → phải <code>ENABLED_MODELS=classifier,detector</code> (bỏ LLM)</td>
+</tr>
+<tr>
+<td><strong>Streamlit Community Cloud</strong></td>
+<td>giao diện Streamlit</td>
+<td>0đ, đặt secret <code>API_URL</code> trỏ về backend</td>
+</tr>
+</tbody>
+</table>
+<h2>8. Lỗi đã gặp và cách sửa</h2>
+<table>
+<thead>
+<tr>
+<th>Triệu chứng</th>
+<th>Nguyên nhân</th>
+<th>Cách sửa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Docker image phình thêm ~100 MB</td>
+<td><code>chown -R</code> sau <code>COPY</code> nhân bản layer, mà HF Spaces chạy container bằng UID 1000</td>
+<td>Tạo user <code>-u 1000</code> <strong>trước</strong> mọi <code>COPY</code> rồi dùng <code>COPY --chown</code></td>
+</tr>
+<tr>
+<td>Image local kéo theo hàng trăm MB dữ liệu thô</td>
+<td><code>COPY data/ data/</code></td>
+<td>Copy tường minh <code>data/kb</code> và <code>data/gallery</code></td>
+</tr>
+<tr>
+<td>Browser báo lỗi CORS dù đã set <code>CORS_ORIGINS</code></td>
+<td>Giá trị có dấu <code>/</code> ở cuối (hoặc có dấu cách sau dấu phẩy — <code>config.py</code> cắt chuỗi theo <code>,</code> mà không trim)</td>
+<td>Nhập đúng origin, không dấu <code>/</code>, không khoảng trắng</td>
+</tr>
+<tr>
+<td>Trang tĩnh gọi <code>/api/...</code> ra 404</td>
+<td>Thiếu địa chỉ backend lúc build</td>
+<td>Đặt <code>VITE_API_URL</code>/<code>VITE_API_DISCOVERY</code>, hoặc dùng <code>?api=</code>/<code>?discovery=</code> lúc chạy</td>
+</tr>
+<tr>
+<td>Colab: log in <code>ℹ️ Chưa công bố địa chỉ backend…</code> dù Secrets đã đúng</td>
+<td><code>!python …</code> là <strong>tiến trình con</strong>, không đọc được <code>userdata</code> của kernel</td>
+<td>Export <code>os.environ[...] = userdata.get(...)</code> trong kernel trước khi chạy (tiến trình con kế thừa)</td>
+</tr>
+<tr>
+<td><code>git push</code> 403 dù đang là chủ repo</td>
+<td>Token thiếu <strong>Contents: write</strong> (fine-grained) hoặc máy đang cache credential của tài khoản khác</td>
+<td>Cấp đúng quyền; push bằng <code>-c credential.helper=</code> để không dùng credential cũ</td>
+</tr>
+<tr>
+<td><code>PATCH /gists/{id}</code> trả 403</td>
+<td>PAT chỉ sửa được gist <strong>của chính nó</strong> (gist thuộc tài khoản khác) hoặc thiếu quyền <code>gists=write</code></td>
+<td>Dùng token của đúng chủ gist, cấp quyền ghi gist</td>
+</tr>
+<tr>
+<td>Muốn tạo Docker Space nhưng bị chặn</td>
+<td>Chính sách 2026: Space chạy compute cần PRO</td>
+<td>Dùng Colab + tunnel (miễn phí), hoặc HF Static Space cho frontend</td>
+</tr>
+<tr>
+<td>Một mô hình nạp lỗi làm sao biết?</td>
+<td>—</td>
+<td><code>api/main.py</code> bọc <code>try/except</code> từng mô hình; <code>/api/health</code> liệt kê <code>models</code> true/false, lỗi ghi vào <code>logs/api.log</code></td>
+</tr>
+<tr>
+<td>Chatbot trả lời ngoài tài liệu</td>
+<td>Truy xuất lấy đoạn không liên quan nhưng điểm vẫn trên ngưỡng</td>
+<td><code>RAG_MIN_SCORE</code> (0.30) chặn nhóm điểm rất thấp; nhưng hai nhóm <strong>chồng lấn</strong> (trong phạm vi thấp nhất 0.556 vs ngoài phạm vi 0.561) nên không nâng ngưỡng thêm được — cần reranker</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Hạn chế đã biết và hướng phát triển</h2>
+<ul>
+<li><strong>Chất lượng ứng dụng 4 là điểm yếu nhất</strong>: trả lời đúng ~6–7/10, có ca từ chối sai, có ca bịa; <strong>gõ
+không dấu làm truy xuất sụp</strong> (<code>0.674</code> → <code>0.359</code>) và trả lời sai — lỗi nghiêm trọng nhất đã biết. Hướng
+sửa: thêm <strong>reranker cross-encoder</strong>, hoặc thay embedding/LLM tốt hơn (chỉ đổi biến môi trường).</li>
+<li><strong>Không có xác thực, không có rate limit</strong> trên API; ảnh tải lên chỉ kiểm kích thước và định dạng.</li>
+<li><strong>Chưa có test tự động chống prompt injection</strong> (mới có 4 câu thăm dò ghi ở <code>artifacts/rag_probe.json</code>).</li>
+<li><strong>Mẫu đo nhỏ</strong>: Hit@k trên 10 câu, Precision@10 trên 5 truy vấn; detector eval trên chính dữ liệu COCO
+mà mô hình đã học.</li>
+<li><strong>Link demo phụ thuộc phiên Colab</strong> — muốn 24/7 phải chuyển sang host trả phí (mục 7.5).</li>
+<li><strong>Giấy phép</strong>: YOLO11n là <strong>AGPL-3.0</strong> → đưa lên mạng cho người khác dùng là buộc mở mã nguồn; notebook
+gốc còn <strong>xoá <code>LICENSE.txt</code></strong> của TF Flowers. Chi tiết ở <a href="../MODEL_CARD.md">MODEL_CARD.md</a> mục 5.</li>
+</ul>
+<h2>10. Bản đồ file</h2>
+<table>
+<thead>
+<tr>
+<th>Đường dẫn</th>
+<th>Nội dung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>core/</code></td>
+<td><code>classifier.py</code>, <code>detector.py</code>, <code>retrieval.py</code>, <code>llm.py</code> — chỉ suy luận</td>
+</tr>
+<tr>
+<td><code>api/main.py</code></td>
+<td>8 endpoint, CORS, đo thời gian, phục vụ luôn <code>web/dist</code></td>
+</tr>
+<tr>
+<td><code>config.py</code></td>
+<td>Cấu hình tập trung, đọc từ biến môi trường</td>
+</tr>
+<tr>
+<td><code>streamlit_app.py</code> · <code>web/</code></td>
+<td>Hai giao diện (Streamlit và React)</td>
+</tr>
+<tr>
+<td><code>scripts/build_artifacts.py</code></td>
+<td>5 stage sinh artifacts</td>
+</tr>
+<tr>
+<td><code>scripts/serve.py</code></td>
+<td>Chạy API/giao diện/tunnel, tự công bố link vào gist</td>
+</tr>
+<tr>
+<td><code>scripts/deploy_space.py</code></td>
+<td>Đóng gói + đẩy lên Hugging Face Spaces (Docker)</td>
+</tr>
+<tr>
+<td><code>scripts/smoke_test.py</code></td>
+<td>Kiểm thật 8 ca, chạy được với backend ở xa</td>
+</tr>
+<tr>
+<td><code>tests/test_api.py</code></td>
+<td>7 test bằng mô hình giả, chạy trong CI</td>
+</tr>
+<tr>
+<td><code>artifacts/</code> · <code>data/kb/</code> · <code>data/gallery/</code></td>
+<td>Trọng số, chỉ số đo, tài liệu và kho ảnh</td>
+</tr>
+<tr>
+<td><code>deploy/hf-space/README.md</code> · <code>netlify.toml</code></td>
+<td>Cấu hình triển khai</td>
+</tr>
+</tbody>
+</table>
+<h2>11. Khai báo sử dụng AI và giấy phép</h2>
+<ul>
+<li>AI hỗ trợ trong quá trình làm bài: <strong>Kimi Code CLI</strong> (mô hình <code>deepseek-flash</code>) — chuyển notebook của
+thầy thành repo chạy được, viết <code>build_artifacts.py</code>, <code>serve.py</code>, <code>smoke_test.py</code>, <code>tests/</code>, <code>Dockerfile</code>,
+<code>netlify.toml</code>, <code>deploy_space.py</code>; tìm và sửa lỗi; chạy kiểm thử và đo độ trễ; viết README/<code>MODEL_CARD.md</code>.
+Kiến trúc, mô hình và code gốc lấy từ notebook của thầy; nhóm chạy, kiểm chứng và chịu trách nhiệm nội dung.</li>
+<li>Mô hình trong sản phẩm: ResNet-18 (BSD-3-Clause), <strong>YOLO11n (AGPL-3.0 — cần chú ý)</strong>, CLIP (MIT),
+MiniLM (Apache-2.0), Qwen2.5 (Apache-2.0).</li>
+</ul>
+
+</main>
+</body>
+</html>

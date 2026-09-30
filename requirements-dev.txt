@@ -1,6 +1,8 @@
-# Công cụ cho phát triển: sinh artifacts, test API, mở tunnel, đẩy lên HF Spaces. Không cần khi chỉ chạy API.
+# Công cụ cho phát triển: sinh artifacts, test API, mở tunnel, đẩy lên HF Spaces, chuyển md → html.
+# Không cần khi chỉ chạy API.
 matplotlib
 huggingface_hub
+markdown-it-py
 psutil
 pytest>=7
 httpx
