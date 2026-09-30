@@ -136,13 +136,17 @@ GIST_FILE = "api.json"
 
 
 def secret(name: str) -> str | None:
-    """Đọc từ biến môi trường, hoặc từ Colab Secrets khi chạy trên Colab."""
+    """Đọc từ biến môi trường, hoặc từ Colab Secrets khi chạy trên Colab.
+
+    Giá trị được cắt khoảng trắng/xuống dòng vì dán vào Colab Secrets rất dễ dính kèm.
+    """
     if os.environ.get(name):
-        return os.environ[name]
+        return os.environ[name].strip()
     try:
         from google.colab import userdata  # chỉ có trên Colab
 
-        return userdata.get(name)
+        value = userdata.get(name)
+        return value.strip() if value else None
     except Exception:
         return None
 
@@ -158,7 +162,11 @@ def publish_api_url(url: str, gist_id: str | None = None) -> bool:
     gist_id = gist_id or secret("GIST_ID")
     token = secret("GH_TOKEN")
     if not gist_id or not token:
-        print("ℹ️ Chưa công bố địa chỉ backend: thiếu GH_TOKEN hoặc GIST_ID (xem README mục 6.2)", flush=True)
+        print(
+            "ℹ️ Chưa công bố địa chỉ backend: thiếu GH_TOKEN hoặc GIST_ID — kiểm Colab Secrets (🔑) đã có "
+            "đủ hai secret và đã bật Notebook access chưa (xem README mục 6.2)",
+            flush=True,
+        )
         return False
 
     content = {"api": url, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
