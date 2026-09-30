@@ -1,0 +1,9 @@
+# Netlify chỉ dựng giao diện React. VITE_API_URL (địa chỉ backend) đặt trong
+# Site settings → Environment variables, không commit vào repo.
+[build]
+  base = "web"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"   # Vite 8 cần Node ≥ 20.19 hoặc ≥ 22.12

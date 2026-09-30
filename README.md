@@ -162,21 +162,79 @@ python -m pytest                      # test API bằng mô hình giả, ~2 giâ
 Test trong `tests/test_api.py` thay mô hình thật bằng bản giả qua `MODELS` của `api.main`, nên không cần
 torch hay artifacts. Cùng lệnh này chạy trong GitHub Actions (`.github/workflows/ci.yml`).
 
-Kiểm thử thật (cần artifacts): `python scripts/smoke_test.py` khi API đang chạy.
+Kiểm thử thật (cần artifacts): `python scripts/smoke_test.py` khi API đang chạy — máy local hay bản đã
+triển khai đều được, chỉ cần đặt `API_URL` trỏ tới đó.
 
 ## 6. Triển khai
 
+Hai bản đang chạy công khai:
+
+| Thành phần | Nơi chạy | Địa chỉ |
+|---|---|---|
+| Backend FastAPI + 4 mô hình | Hugging Face Spaces (Docker, CPU miễn phí) | `https://<user>-ai-web-apps.hf.space` |
+| Giao diện React | Netlify | `https://<tên-site>.netlify.app` |
+
+### 6.1 Backend → Hugging Face Spaces
+
+Space loại **Docker**, cổng 7860 (đã có sẵn `Dockerfile`); trọng số CLIP, MiniLM và Qwen 0.5B do
+container tải lúc khởi động nên image không phình thêm.
+
+```bash
+pip install -r requirements-dev.txt
+hf auth login                                         # token có quyền write, hoặc đặt HF_TOKEN
+python scripts/deploy_space.py --repo <user>/ai-web-apps --dry-run   # xem trước nội dung đẩy lên
+python scripts/deploy_space.py --repo <user>/ai-web-apps
+```
+
+`scripts/deploy_space.py` dựng `dist/space/` chỉ gồm file Space cần (~100 MB, trong đó `artifacts/`
+60 MB và `data/gallery/` 39 MB), kiểm mọi lệnh `COPY` của Dockerfile đều có nguồn tương ứng, rồi đẩy
+bằng `huggingface_hub`. File `artifacts/classifier/model.pt` 43 MB do hub tự đưa qua LFS nên không cần
+cấu hình git-lfs. README dự án giữ nguyên vì `deploy/hf-space/README.md` — bản có frontmatter
+`sdk: docker`, `app_port: 7860` — được copy thành `README.md` của Space.
+
+Sau khi đẩy: chờ build ở tab **Logs** (~5–10 phút vì `pip install torch` CPU và build React), vào
+**Settings → Variables and secrets** đặt `CORS_ORIGINS=https://<tên-site>.netlify.app,http://localhost:5173`,
+chờ Space **Running** rồi kiểm `curl https://<user>-ai-web-apps.hf.space/api/health`. Lần đầu Space
+mất 1–3 phút để tải trọng số, và gói miễn phí ngủ sau 48 giờ không có truy cập — giao diện React đã
+thử lại `/api/health` mỗi 3 giây trong ~60 giây nên vẫn vào được trong lúc chờ.
+
+### 6.2 React → Netlify
+
+Netlify đọc `netlify.toml`: base `web`, `npm run build`, publish `dist`, `NODE_VERSION=22` (Vite 8 cần
+Node ≥ 20.19 hoặc ≥ 22.12). Chỉ cần thêm biến môi trường **build-time** trong
+**Site settings → Environment variables**:
+
+```
+VITE_API_URL = https://<user>-ai-web-apps.hf.space
+```
+
+Vite nhúng giá trị này vào bundle lúc build, nên đổi backend phải deploy lại Netlify. Quên biến này thì
+React gọi `/api/...` ngay trên tên miền Netlify và nhận 404.
+
+### 6.3 Kiểm chứng bản đã triển khai
+
+```bash
+API_URL=https://<user>-ai-web-apps.hf.space python scripts/smoke_test.py
+```
+
+Kỳ vọng: `/api/health` báo cả 4 mô hình `true`, ảnh gallery trả `image/*` (script lấy ảnh mẫu từ
+`data/gallery` nên không cần tải bộ Flowers), `/api/chat` trả đủ chuỗi SSE `sources → token… → done`,
+và các ca lỗi vẫn đúng mã 400/413/404/422. Trên link Netlify: bốn tab chạy thật, tab **Tìm kiếm ảnh**
+phải hiện thumbnail (đây là chỗ dễ lộ lỗi ghép `VITE_API_URL`), DevTools không có lỗi CORS.
+
+### 6.4 Phương án khác
+
 | Phương án | Phù hợp | Tóm tắt | Chi phí |
 |---|---|---|---|
-| **Hugging Face Spaces (Docker)** | API + React, một link | Tạo Space loại *Docker*, đẩy repo (đã có `Dockerfile`, cổng 7860) | Miễn phí, CPU 2 vCPU/16 GB |
-| **Streamlit Community Cloud** | Giao diện Streamlit | Đẩy repo có `streamlit_app.py` + `requirements-streamlit.txt`, đặt secret `API_URL` trỏ tới API | Miễn phí |
+| **Streamlit Community Cloud** | Giao diện Streamlit | Đẩy repo có `streamlit_app.py` + `requirements-streamlit.txt`, đặt secret `API_URL` trỏ tới API ở 6.1 | Miễn phí |
 | **Render / Railway / Fly.io** | API container | Kết nối repo, dùng `Dockerfile` | Có gói miễn phí |
 | **VPS có GPU** | Dự án thật | `docker run --gpus all`, đặt sau Nginx + HTTPS | Theo máy |
-| **Vercel / Netlify** | Chỉ React | Build `web/`, đặt `VITE_API_URL` = địa chỉ API, bật CORS ở API | Miễn phí |
+| **Vercel** | Chỉ React | Như Netlify ở 6.2, đặt `VITE_API_URL` | Miễn phí |
 
 `Dockerfile` chỉ cần `artifacts/` và `data/gallery/` — **repo đã kèm sẵn hai thư mục này** (~100 MB,
-sinh từ lần chạy Colab T4), nên `docker build` chạy được ngay sau khi clone. Muốn image nhẹ hơn thì
-để Space tải trọng số từ Hugging Face Hub lúc khởi động và thêm hai thư mục đó vào `.dockerignore`.
+sinh từ lần chạy Colab T4), nên `docker build` chạy được ngay sau khi clone. Container chạy bằng user
+UID 1000 và dùng `COPY --chown` đúng như Hugging Face Spaces yêu cầu, nên build local khớp build trên
+Space.
 
 Lưu ý khi lên production: gói miễn phí không có GPU nên đặt `ENABLED_MODELS` gọn và
 `LLM_MODEL=Qwen/Qwen2.5-0.5B-Instruct`; đặt `CORS_ORIGINS` đúng tên miền giao diện; không commit API key.
@@ -193,8 +251,10 @@ Lưu ý khi lên production: gói miễn phí không có GPU nên đặt `ENABLE
 | `YOLO_WEIGHTS` | `artifacts/detector/yolo11n.pt` | Trọng số phát hiện đối tượng |
 | `MAX_UPLOAD_MB` | `8` | Giới hạn ảnh tải lên |
 | `RAG_MIN_SCORE` | `0.30` | Điểm cosine tối thiểu để coi là tài liệu liên quan; dưới ngưỡng thì chatbot từ chối thay vì gọi LLM |
-| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:8501` | Origin được gọi API |
-| `API_URL` | `http://localhost:8000` | (Streamlit) địa chỉ backend |
+| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:8501` | Origin được gọi API; khi deploy phải thêm tên miền Netlify |
+| `API_URL` | `http://localhost:8000` | (Streamlit, `scripts/smoke_test.py`) địa chỉ backend |
+| `VITE_API_URL` | rỗng = cùng origin | (React, **build-time**) địa chỉ backend; đặt trong Netlify khi deploy |
+| `HF_SPACE_ID` | — | (`scripts/deploy_space.py`) `<user>/<tên-space>` mặc định khi đẩy lên HF Spaces |
 
 ## 8. API
 
@@ -235,6 +295,9 @@ docker run -p 7860:7860 ai-web-apps      # mở http://localhost:7860
 - `/api/detect` trả ảnh base64 ~368 KB nên vòng-trip chậm hơn server ~60 lần — **nút cổ chai là truyền ảnh, không phải mô hình.**
 - Chất lượng chatbot: truy xuất đúng tài liệu 10/10, trả lời đúng ~6–7/10 trên 10 câu hỏi chuẩn — chi tiết ở [MODEL_CARD.md](MODEL_CARD.md).
 
+Bảng trên là số của GPU T4. Bản chạy trên Hugging Face Spaces dùng **2 vCPU** nên chậm hơn nhiều, nhất là
+`/api/chat` (Qwen 0.5B sinh từng token trên CPU); đổi lại không tốn GPU và vẫn dùng đủ 4 mô hình.
+
 Chỉ số mô hình (accuracy, F1, mAP, Precision@k, Hit@k) và cách đo: [MODEL_CARD.md](MODEL_CARD.md),
 số thô ở [docs/measurements/](docs/measurements/).
 
@@ -250,6 +313,11 @@ số thô ở [docs/measurements/](docs/measurements/).
 | Streamlit upload báo 403 sau proxy | Giữ `--server.enableXsrfProtection false` (đã có trong `serve.py`) |
 | `npm run build` lỗi | Node phải ≥ 22.12 |
 | Chatbot trả lời bịa | Kiểm `artifacts/rag_metrics.json` (Hit@3), tăng `k`, dùng `LLM_MODEL` lớn hơn |
+| Trang Netlify gọi API trả 404 | Thiếu `VITE_API_URL` — thêm biến rồi **deploy lại** (Vite nhúng lúc build) |
+| DevTools báo lỗi CORS khi gọi backend | Thêm đúng tên miền Netlify vào `CORS_ORIGINS` trong Space → Settings → Variables |
+| Space báo `Runtime error` / mô hình `false` | Xem tab Logs; thiếu file trong `artifacts/` hoặc `data/gallery/` thì chạy lại `scripts/deploy_space.py` |
+| Space vào chậm lần đầu | Gói miễn phí ngủ sau 48 giờ và tải trọng số lúc khởi động (1–3 phút) — cứ để trang tự thử lại |
+| Đẩy Space lỗi `file too large` | `hf upload` đã tự dùng LFS; nếu push bằng git thì phải `git lfs track "*.pt"` trước |
 
 Chỉ số đã đo: `artifacts/classifier/metrics.json`, `artifacts/detector/metrics.json`,
 `artifacts/retrieval/metrics.json`, `artifacts/rag_metrics.json`.

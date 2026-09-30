@@ -3,6 +3,9 @@
     python scripts/build_artifacts.py all
     python scripts/serve.py api          # ở terminal khác
     python scripts/smoke_test.py
+
+    # hoặc kiểm backend đã triển khai (không cần data/flowers, lấy ảnh từ data/gallery)
+    API_URL=https://<user>-ai-web-apps.hf.space python scripts/smoke_test.py
 """
 from __future__ import annotations
 
@@ -24,6 +27,16 @@ use_utf8_console()
 
 API = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
 FLOWERS_DIR = DATA_DIR / "flowers" / "flower_photos"
+GALLERY_META = ROOT / "artifacts" / "retrieval" / "meta.json"
+
+
+def sample_flower() -> bytes:
+    """Ảnh hoa để gọi API: bộ Flowers nếu đã tải, không thì lấy từ kho gallery (đã commit trong repo)."""
+    if FLOWERS_DIR.exists():
+        return next((FLOWERS_DIR / "sunflowers").glob("*.jpg")).read_bytes()
+    meta = json.loads(GALLERY_META.read_text(encoding="utf-8"))
+    entry = next((m for m in meta if m["label"] == "sunflowers"), meta[0])
+    return (ROOT / entry["path"]).read_bytes()
 
 
 def main() -> int:
@@ -33,7 +46,7 @@ def main() -> int:
     print("health:", health)
     enabled = [m for m, ok in health["models"].items() if ok]
 
-    flower_img = next((FLOWERS_DIR / "sunflowers").glob("*.jpg")).read_bytes()
+    flower_img = sample_flower()
     bus_img = Path(ASSETS / "bus.jpg").read_bytes()
 
     if "classifier" in enabled:
