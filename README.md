@@ -1,6 +1,6 @@
 # AI Web Apps — Streamlit & React
 
-📊 **[Slide về cách làm — bản 1 trang](docs/slide-cach-lam.pptx)** (bản nộp chính) &nbsp;·&nbsp; **[bản 5 trang](docs/slide-cach-lam-5-trang.pptx)** &nbsp;·&nbsp; 📷 **[Ảnh giao diện](#ảnh-giao-diện)** &nbsp;·&nbsp; 📄 **[Model card](MODEL_CARD.md)**
+📊 **[Slide về cách làm — bản 1 trang](docs/slide-cach-lam.pptx)** (bản nộp chính) &nbsp;·&nbsp; **[bản 5 trang](docs/slide-cach-lam-5-trang.pptx)** &nbsp;·&nbsp; 📝 **[Tổng hợp cách làm](docs/cach-lam-tong-hop.md)** &nbsp;·&nbsp; 📷 **[Ảnh giao diện](#ảnh-giao-diện)** &nbsp;·&nbsp; 📄 **[Model card](MODEL_CARD.md)**
 
 Bốn ứng dụng AI sau **một** backend FastAPI, với hai giao diện web (Streamlit và React).
 
