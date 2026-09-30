@@ -137,7 +137,7 @@ chai là **truyền ảnh**, không phải mô hình. Và lần gọi đầu ti�
 | Thành phần | Nơi chạy | Địa chỉ | Sống khi nào |
 |---|---|---|---|
 | Backend FastAPI + 4 mô hình | Colab T4 + Cloudflare Tunnel | `https://<tên-ngẫu-nhiên>.trycloudflare.com` | chỉ khi phiên Colab còn chạy |
-| Giao diện React | Netlify | `https://ai-web-aapp.netlify.app` | luôn (file tĩnh) |
+| Giao diện React | Netlify | `https://vuon-hoa-ai.netlify.app` | luôn (file tĩnh) |
 
 Vì link tunnel đổi mỗi phiên, chính link tunnel cũng phục vụ luôn bản React đã build → cách gọn nhất để
 có *một* link là mở thẳng link tunnel (cùng origin, không cần CORS).
@@ -171,7 +171,7 @@ import os
 from google.colab import userdata
 os.environ["GH_TOKEN"] = userdata.get("GH_TOKEN")     # !python là tiến trình con, không đọc được userdata
 os.environ["GIST_ID"] = userdata.get("GIST_ID")
-os.environ["CORS_ORIGINS"] = "https://ai-web-aapp.netlify.app"
+os.environ["CORS_ORIGINS"] = "https://vuon-hoa-ai.netlify.app"
 !python scripts/serve.py all                          # log sẽ in: 📣 Đã công bố địa chỉ backend: …
 ```
 

@@ -221,8 +221,8 @@ python scripts/serve.py streamlit    # http://localhost:8501
 cd web &amp;&amp; npm install &amp;&amp; npm run build &amp;&amp; python scripts/serve.py web
 </code></pre>
 <pre><code class="language-python"># trên Colab (Runtime → T4 GPU trước)
-!git clone -b develop https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/ai_web_apps
-%cd /content/ai_web_apps
+!git clone -b test https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/vuon_hoa_ai
+%cd /content/vuon_hoa_ai
 !pip install -q -r requirements-colab.txt     # không cài lại torch vì Colab đã có bản khớp CUDA
 !python scripts/serve.py all                  # build React → API → Streamlit → tunnel
 </code></pre>
@@ -310,7 +310,7 @@ chai là <strong>truyền ảnh</strong>, không phải mô hình. Và lần g�
 <tr>
 <td>Giao diện React</td>
 <td>Netlify</td>
-<td><code>https://ai-web-aapp.netlify.app</code></td>
+<td><code>https://vuon-hoa-ai.netlify.app</code></td>
 <td>luôn (file tĩnh)</td>
 </tr>
 </tbody>
