@@ -7,6 +7,9 @@
     python scripts/serve.py tunnel         # Cloudflare Tunnel cho 8000 và 8501 (Colab/Linux)
 
 Trên Windows chỉ cần `api` + `streamlit` + `web`; tunnel nên chạy trên Colab.
+
+Link tunnel đổi mỗi phiên, nên sau khi mở tunnel script tự công bố địa chỉ backend vào gist (cần
+GH_TOKEN + GIST_ID) để giao diện React ở origin khác — ví dụ Netlify — tự nối. Xem README mục 6.2.
 """
 from __future__ import annotations
 
@@ -22,7 +25,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.colab_utils import log_tail, start, start_api, tunnel, use_utf8_console, wait_http  # noqa: E402
+from scripts.colab_utils import (  # noqa: E402
+    log_tail,
+    publish_api_url,
+    start,
+    start_api,
+    tunnel,
+    use_utf8_console,
+    wait_http,
+)
 
 use_utf8_console()
 
@@ -95,6 +106,7 @@ def main() -> int:
     parser.add_argument("--no-tunnel", action="store_true", help="bỏ qua bước mở tunnel")
     parser.add_argument("--enabled-models", default=None, help="ghi đè ENABLED_MODELS cho API")
     parser.add_argument("--api-timeout", type=int, default=900)
+    parser.add_argument("--publish", default=None, help="địa chỉ backend công bố vào gist (mặc định: link tunnel của API)")
     args = parser.parse_args()
 
     env = {"ENABLED_MODELS": args.enabled_models} if args.enabled_models else None
@@ -120,6 +132,10 @@ def main() -> int:
                 urls[name.capitalize()] = tunnel(name, port)
             except Exception as exc:
                 print(f"⚠️ Tunnel {name}: {exc}", flush=True)
+
+    published = args.publish or urls.get("React")
+    if published:
+        publish_api_url(published)
 
     print("\n--- Địa chỉ ---")
     for name, url in urls.items():

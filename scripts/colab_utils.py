@@ -4,6 +4,7 @@ Dùng được cả trên Colab/Linux lẫn Windows.
 """
 from __future__ import annotations
 
+import json
 import os
 import platform
 import re
@@ -128,3 +129,47 @@ def tunnel(name: str, port: int, timeout: int = 60) -> str:
             return m.group(0)
         time.sleep(1)
     raise TimeoutError("Không tạo được tunnel — xem " + str(log_path))
+
+
+GIST_API = "https://api.github.com/gists"
+GIST_FILE = "api.json"
+
+
+def secret(name: str) -> str | None:
+    """Đọc từ biến môi trường, hoặc từ Colab Secrets khi chạy trên Colab."""
+    if os.environ.get(name):
+        return os.environ[name]
+    try:
+        from google.colab import userdata  # chỉ có trên Colab
+
+        return userdata.get(name)
+    except Exception:
+        return None
+
+
+def publish_api_url(url: str, gist_id: str | None = None) -> bool:
+    """Công bố địa chỉ backend hiện tại vào gist để giao diện ở origin khác tự nối.
+
+    Giao diện đọc gist này qua `VITE_API_DISCOVERY` (xem README mục 6.2). Cần GH_TOKEN (scope `gist`)
+    và GIST_ID, đặt qua biến môi trường hoặc Colab Secrets. Thiếu thì chỉ in nhắc, không làm gì.
+    """
+    import requests
+
+    gist_id = gist_id or secret("GIST_ID")
+    token = secret("GH_TOKEN")
+    if not gist_id or not token:
+        print("ℹ️ Chưa công bố địa chỉ backend: thiếu GH_TOKEN hoặc GIST_ID (xem README mục 6.2)", flush=True)
+        return False
+
+    content = {"api": url, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    r = requests.patch(
+        f"{GIST_API}/{gist_id}",
+        json={"files": {GIST_FILE: {"content": json.dumps(content, indent=2)}}},
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+        timeout=20,
+    )
+    if r.status_code >= 300:
+        print(f"⚠️ Không cập nhật được gist công bố ({r.status_code}): {r.text[:200]}", flush=True)
+        return False
+    print(f"📣 Đã công bố địa chỉ backend: {url}", flush=True)
+    return True

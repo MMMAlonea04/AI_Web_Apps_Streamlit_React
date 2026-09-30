@@ -194,8 +194,9 @@ Netlify đọc `netlify.toml`: base `web`, `npm run build`, publish `dist`, `NOD
 Node ≥ 20.19 hoặc ≥ 22.12). Nối repo GitHub để Netlify tự build mỗi lần push, hoặc build tại máy rồi kéo
 thả thư mục `web/dist` vào https://app.netlify.com/drop.
 
-Địa chỉ backend được đọc **lúc chạy**, theo thứ tự ưu tiên: `?api=…` → `window.API_URL` → `VITE_API_URL`
-(lúc build) → cùng origin (xem `web/src/api.js`). Nhờ vậy link tunnel đổi mỗi phiên cũng không phải build lại:
+Địa chỉ backend được đọc **lúc chạy**, theo thứ tự ưu tiên: `?api=…` → `window.API_URL` → gist công bố
+(`VITE_API_DISCOVERY`) → `localStorage` → `VITE_API_URL` (lúc build) → cùng origin (xem `web/src/api.js`).
+Nhờ vậy link tunnel đổi mỗi phiên cũng không phải build lại:
 
 ```
 https://<tên-site>.netlify.app/?api=https://<link-tunnel>.trycloudflare.com
@@ -204,6 +205,27 @@ https://<tên-site>.netlify.app/?api=https://<link-tunnel>.trycloudflare.com
 Địa chỉ này được ghi vào `localStorage`, các lần sau chỉ cần mở `https://<tên-site>.netlify.app` — địa chỉ
 đang dùng hiện ngay dưới tiêu đề trang. Nếu backend đã chạy mà trang vẫn báo không kết nối thì kiểm
 `CORS_ORIGINS` phía API có đúng tên miền Netlify.
+
+#### Tự nối mỗi phiên: gist công bố
+
+Dán `?api=` mỗi phiên thì phiền, mà `localStorage` cũng giữ địa chỉ cũ sau khi phiên Colab kết thúc. Cách
+tự động: để `serve.py` công bố link tunnel mới lên một **gist công khai**, còn giao diện đọc gist đó trước
+khi gọi API.
+
+Chuẩn bị một lần:
+
+1. Tạo **public gist** với file tên `api.json`, nội dung `{"api": ""}`, rồi lấy ID ở cuối URL gist.
+2. Tạo GitHub token **chỉ với scope `gist`** tại [Settings → Developer settings → Tokens](https://github.com/settings/tokens),
+   lưu vào Colab Secrets tên `GH_TOKEN`, và ID gist vào `GIST_ID` (hoặc `export` trong cell).
+3. Trên Netlify thêm biến build-time `VITE_API_DISCOVERY=https://api.github.com/gists/<id-gist>` rồi deploy lại.
+
+Sau đó mỗi phiên chỉ cần `python scripts/serve.py all`: log in ra dòng `📣 Đã công bố địa chỉ backend: …`,
+mở `https://<tên-site>.netlify.app` là vào thẳng, không cần dán gì. Muốn công bố địa chỉ khác (named
+tunnel, host 24/7…) thì dùng `python scripts/serve.py all --publish https://<địa-chỉ>`.
+
+Hai điều cần biết: gist **thắng** `localStorage`, nên `?api=` chỉ có tác dụng cho lần mở đó; và
+`api.github.com` giới hạn 60 request/giờ mỗi IP — quá đủ cho demo, nhưng nếu thấy gist không cập nhật thì
+kiểm rate limit.
 
 ### 6.3 Hugging Face Spaces: Docker cần PRO, Static vẫn miễn phí
 
@@ -264,7 +286,10 @@ Lưu ý khi lên production: host không có GPU thì đặt `ENABLED_MODELS` g�
 | `CORS_ORIGINS` | `http://localhost:5173,http://localhost:8501` | Origin được gọi API; khi deploy phải thêm tên miền Netlify |
 | `API_URL` | `http://localhost:8000` | (Streamlit, `scripts/smoke_test.py`) địa chỉ backend |
 | `VITE_API_URL` | rỗng = cùng origin | (React, **build-time**) địa chỉ backend mặc định của bản build |
-| `?api=` / `window.API_URL` | rỗng | (React, **lúc chạy**) địa chỉ backend, ghi đè `VITE_API_URL`; `?api=` được lưu vào `localStorage` |
+| `?api=` / `window.API_URL` | rỗng | (React, **lúc chạy**) địa chỉ backend, ghi đè mọi nguồn khác; `?api=` được lưu vào `localStorage` |
+| `VITE_API_DISCOVERY` | rỗng = tắt | (React, **build-time**) URL gist công bố địa chỉ backend, ví dụ `https://api.github.com/gists/<id>` |
+| `GH_TOKEN` | — | (`serve.py`) GitHub token scope `gist` để tự công bố link tunnel; đặt qua biến môi trường hoặc Colab Secrets |
+| `GIST_ID` | — | (`serve.py`) ID gist công bố |
 | `HF_SPACE_ID` | — | (`scripts/deploy_space.py`) `<user>/<tên-space>` mặc định khi đẩy lên HF Spaces (cần PRO) |
 
 ## 8. API
@@ -325,7 +350,10 @@ số thô ở [docs/measurements/](docs/measurements/).
 | `npm run build` lỗi | Node phải ≥ 22.12 |
 | Chatbot trả lời bịa | Kiểm `artifacts/rag_metrics.json` (Hit@3), tăng `k`, dùng `LLM_MODEL` lớn hơn |
 | Netlify báo “không kết nối” / gọi API ra 404 | Mở kèm địa chỉ backend: `https://<tên-site>.netlify.app/?api=https://<link-tunnel>` — địa chỉ đang dùng hiện ngay dưới tiêu đề trang |
-| Link tunnel Colab đổi mỗi phiên | Không phải build lại React: chỉ cần mở Netlify kèm `?api=<link mới>`, địa chỉ được ghi nhớ trong `localStorage` |
+| Link tunnel Colab đổi mỗi phiên | Không phải build lại React: chỉ cần mở Netlify kèm `?api=<link mới>`, hoặc bật gist công bố để tự nối (mục 6.2) |
+| Log Colab không có dòng `📣 Đã công bố…` | Thiếu `GH_TOKEN` hoặc `GIST_ID` — xem lại Colab Secrets ở mục 6.2 |
+| Netlify vẫn nối vào link tunnel cũ | Gist chưa cập nhật hoặc bị rate limit (60 request/giờ mỗi IP) — mở trực tiếp `https://api.github.com/gists/<id>` để xem nội dung |
+| `?api=…` không giữ cho lần sau | Khi đã bật `VITE_API_DISCOVERY` thì gist luôn thắng `localStorage`, nên `?api=` chỉ có tác dụng cho lần mở đó |
 | DevTools báo lỗi CORS | `export CORS_ORIGINS="https://<tên-site>.netlify.app"` **trước khi** chạy `serve.py` — API đọc biến này lúc khởi động |
 | Cần link 24/7, không phụ thuộc phiên Colab | Colab không phải host 24/7 — xem mục 6.5 (Hugging Face PRO, Cloud Run…) |
 | HF báo “Docker Spaces require a paid plan” | Từ 2026 Docker Space cần gói PRO; muốn link React miễn phí trên HF thì dùng Static Space (mục 6.3) |

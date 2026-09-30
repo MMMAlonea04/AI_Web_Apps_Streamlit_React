@@ -1,17 +1,50 @@
-// Mọi lời gọi backend nằm ở đây. Địa chỉ backend xác định lúc chạy, theo thứ tự ưu tiên:
-// ?api=<địa chỉ> (lưu lại cho lần sau) → window.API_URL → VITE_API_URL (lúc build) → rỗng = cùng origin.
+// Mọi lời gọi backend nằm ở đây. Địa chỉ backend xác định LÚC CHẠY, theo thứ tự ưu tiên:
+// ?api=<địa chỉ> → window.API_URL → gist công bố (VITE_API_DISCOVERY) → localStorage
+// → VITE_API_URL (lúc build) → rỗng = cùng origin.
 const STORAGE_KEY = 'api_base';
+const DISCOVERY_TIMEOUT_MS = 4000;
 
-function runtimeApi() {
-  const asked = new URLSearchParams(window.location.search).get('api');
-  if (asked) {
-    try { localStorage.setItem(STORAGE_KEY, asked); } catch { /* chế độ riêng tư: bỏ qua */ }
-    return asked;
-  }
-  try { return localStorage.getItem(STORAGE_KEY) ?? window.API_URL ?? null; } catch { return window.API_URL ?? null; }
+export let API_BASE = '';
+
+const clean = (base) => String(base ?? '').trim().replace(/\/+$/, '');
+
+function remember(base) {
+  try { localStorage.setItem(STORAGE_KEY, base); } catch { /* chế độ riêng tư: bỏ qua */ }
 }
 
-export const API_BASE = (runtimeApi() ?? import.meta.env.VITE_API_URL ?? '').trim().replace(/\/+$/, '');
+function stored() {
+  try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+}
+
+// Gist công bố của phiên Colab đang chạy, do scripts/serve.py cập nhật:
+// {"files": {"api.json": {"content": "{\"api\": \"https://…\"}"}}}
+async function discovered() {
+  const endpoint = import.meta.env.VITE_API_DISCOVERY;
+  if (!endpoint) return null;
+  try {
+    const res = await fetch(endpoint, { cache: 'no-store', signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS) });
+    if (!res.ok) return null;
+    const body = await res.json();
+    const content = body?.files?.['api.json']?.content ?? body?.content;
+    const api = content ? JSON.parse(content).api : body?.api;
+    return api || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function resolveApiBase() {
+  const asked = clean(new URLSearchParams(window.location.search).get('api'));
+  if (asked) {
+    remember(asked);
+    API_BASE = asked;
+    return API_BASE;
+  }
+  const found = clean(window.API_URL) || await discovered() || clean(stored()) || clean(import.meta.env.VITE_API_URL);
+  if (found) remember(found);
+  API_BASE = found;
+  return API_BASE;
+}
 
 async function handle(res) {
   if (!res.ok) {
