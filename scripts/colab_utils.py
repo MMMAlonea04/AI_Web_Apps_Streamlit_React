@@ -156,6 +156,9 @@ def publish_api_url(url: str, gist_id: str | None = None) -> bool:
 
     Giao diện đọc gist này qua `VITE_API_DISCOVERY` (xem README mục 6.2). Cần GH_TOKEN (scope `gist`)
     và GIST_ID, đặt qua biến môi trường hoặc Colab Secrets. Thiếu thì chỉ in nhắc, không làm gì.
+
+    Lưu ý trên Colab: `!python scripts/serve.py` là tiến trình con, không đọc được `userdata` của kernel,
+    nên phải đặt biến môi trường trong kernel trước khi chạy (tiến trình con kế thừa).
     """
     import requests
 
@@ -163,8 +166,12 @@ def publish_api_url(url: str, gist_id: str | None = None) -> bool:
     token = secret("GH_TOKEN")
     if not gist_id or not token:
         print(
-            "ℹ️ Chưa công bố địa chỉ backend: thiếu GH_TOKEN hoặc GIST_ID — kiểm Colab Secrets (🔑) đã có "
-            "đủ hai secret và đã bật Notebook access chưa (xem README mục 6.2)",
+            "ℹ️ Chưa công bố địa chỉ backend: thiếu GH_TOKEN hoặc GIST_ID.\n"
+            "   Trên Colab, `!python …` là tiến trình con nên phải đặt trước trong kernel:\n"
+            "     from google.colab import userdata\n"
+            "     os.environ['GH_TOKEN'] = userdata.get('GH_TOKEN')\n"
+            "     os.environ['GIST_ID'] = userdata.get('GIST_ID')\n"
+            "   (cũng cần bật Notebook access cho hai secret — xem README mục 6.2)",
             flush=True,
         )
         return False

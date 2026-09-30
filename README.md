@@ -220,13 +220,32 @@ Chuẩn bị một lần:
 2. Tạo GitHub token **chỉ có quyền ghi gist**: token *classic* thì tick đúng scope `gist`; token
    *fine-grained* thì chọn **User permissions → Gists → Read and write** (`PATCH /gists/{id}` cần `write`,
    xem [bảng quyền của GitHub](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)).
-   Lưu token vào Colab Secrets tên `GH_TOKEN`, và ID gist vào `GIST_ID` (hoặc `export` trong cell).
+   Lưu token vào Colab Secrets tên `GH_TOKEN`, và ID gist vào `GIST_ID`, rồi bật **Notebook access** cho cả hai.
 3. Trên Netlify thêm biến build-time `VITE_API_DISCOVERY=https://api.github.com/gists/<id-gist>` rồi deploy lại.
    Dùng cách kéo-thả thì làm theo mục dưới.
 
-Sau đó mỗi phiên chỉ cần `python scripts/serve.py all`: log in ra dòng `📣 Đã công bố địa chỉ backend: …`,
-mở `https://<tên-site>.netlify.app` là vào thẳng, không cần dán gì. Muốn công bố địa chỉ khác (named
-tunnel, host 24/7…) thì dùng `python scripts/serve.py all --publish https://<địa-chỉ>`.
+Sau đó mỗi phiên, cell Colab phải đẩy secret vào biến môi trường **trước** khi chạy, vì `!python …` là
+tiến trình con nên không đọc được `userdata` của kernel:
+
+```python
+import os
+from google.colab import userdata
+os.environ["GH_TOKEN"] = userdata.get("GH_TOKEN")
+os.environ["GIST_ID"] = userdata.get("GIST_ID")
+os.environ["CORS_ORIGINS"] = "https://<tên-site>.netlify.app"
+!python scripts/serve.py all
+```
+
+Log sẽ in `📣 Đã công bố địa chỉ backend: …`, và mở `https://<tên-site>.netlify.app` là vào thẳng, không
+cần dán gì. Nếu API và tunnel đang chạy sẵn, công bố lại chỉ tốn một lệnh:
+
+```python
+from scripts.colab_utils import publish_api_url   # chạy trong /content/ai_web_apps
+publish_api_url("https://<link-tunnel>.trycloudflare.com")
+```
+
+Muốn công bố địa chỉ khác (named tunnel, host 24/7…) thì dùng
+`python scripts/serve.py all --publish https://<địa-chỉ>`.
 
 Hai điều cần biết: gist **thắng** `localStorage`, nên `?api=` chỉ có tác dụng cho lần mở đó; và
 `api.github.com` giới hạn 60 request/giờ mỗi IP — quá đủ cho demo, nhưng nếu thấy gist không cập nhật thì
