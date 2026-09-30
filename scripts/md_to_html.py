@@ -80,7 +80,7 @@ def main() -> int:
     out = Path(args.out) if args.out else src.with_suffix(".html")
     body = render(src)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(body, encoding="utf-8")
+    out.write_text(body, encoding="utf-8", newline="\n")
     print(
         f"✅ {out} · {len(body) / 1024:.0f} KB · {body.count('<table>')} bảng · "
         f"{len(re.findall(r'<h[23]>', body))} mục · {body.count('<pre>')} khối code",
