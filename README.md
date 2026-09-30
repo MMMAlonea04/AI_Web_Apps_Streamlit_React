@@ -167,12 +167,26 @@ triển khai đều được, chỉ cần đặt `API_URL` trỏ tới đó.
 
 ## 6. Triển khai
 
-Hai bản đang chạy công khai:
+Hai bản đang chạy công khai, cùng một cơ chế (React tĩnh trên Netlify, backend Colab + Cloudflare Tunnel tự công bố địa chỉ qua gist):
 
-| Thành phần | Nơi chạy | Địa chỉ |
+| Bản | Giao diện React | Backend |
 |---|---|---|
-| Backend FastAPI + 4 mô hình | Google Colab (GPU T4) + Cloudflare Tunnel | `https://<tên-ngẫu-nhiên>.trycloudflare.com` — đổi mỗi phiên |
-| Giao diện React | Netlify (miễn phí) | `https://<tên-site>.netlify.app` |
+| **Vườn Hoa AI** (bản mới, nhánh `test`) | `https://vuon-hoa-ai.netlify.app` | Colab T4 + tunnel — đổi mỗi phiên, công bố qua gist riêng |
+| AI Web Apps (bản nhóm đã nộp) | `https://ai-web-aapp.netlify.app` | như trên, gist riêng của bài nhóm |
+
+Phiên Colab cho site **Vườn Hoa AI** (clone nhánh `test`, công bố vào gist mới):
+
+```python
+!git clone -b test https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/vuon_hoa_ai
+%cd /content/vuon_hoa_ai
+!pip install -q -r requirements-colab.txt
+import os
+from google.colab import userdata
+os.environ["GH_TOKEN"] = userdata.get("GH_TOKEN")     # token ghi gist — phải đẩy ra TRƯỚC khi chạy
+os.environ["GIST_ID"] = userdata.get("GIST_ID")       # ← gist mới của site này (7b956575…)
+os.environ["CORS_ORIGINS"] = "https://vuon-hoa-ai.netlify.app"
+!python scripts/serve.py all
+```
 
 ### 6.1 Backend → Colab + Cloudflare Tunnel (miễn phí, có GPU)
 

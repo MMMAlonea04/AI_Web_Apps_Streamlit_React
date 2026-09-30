@@ -94,8 +94,8 @@ cd web && npm install && npm run build && python scripts/serve.py web
 
 ```python
 # trên Colab (Runtime → T4 GPU trước)
-!git clone -b develop https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/ai_web_apps
-%cd /content/ai_web_apps
+!git clone -b test https://github.com/MMMAlonea04/AI_Web_Apps_Streamlit_React.git /content/vuon_hoa_ai
+%cd /content/vuon_hoa_ai
 !pip install -q -r requirements-colab.txt     # không cài lại torch vì Colab đã có bản khớp CUDA
 !python scripts/serve.py all                  # build React → API → Streamlit → tunnel
 ```
